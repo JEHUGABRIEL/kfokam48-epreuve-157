@@ -3,7 +3,9 @@ package com.kfokam48.epreuve.relecture.domain;
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
 import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,4 +27,15 @@ public interface RelectureRepository {
      * passer en chemin.
      */
     List<Relecture> listerParRelecteurEtStatut(Long relecteurId, StatutRelecture statut);
+
+    /**
+     * EF9 / RG14 : la moyenne des notes reçues, par auteur de l'exercice relu. Absent de la carte =
+     * aucune note reçue (et non une moyenne de zéro).
+     *
+     * <p>Une seule requête agrégée pour toute la promotion : c'est ce qui tient ENF2.
+     */
+    Map<Long, Double> moyenneParAuteur(Collection<Long> etudiantIds);
+
+    /** EF9 / RG14 : ce que chaque étudiant doit encore relire (Q11, Q16). */
+    Map<Long, Long> compterEnAttenteParRelecteur(Collection<Long> etudiantIds);
 }
