@@ -11,8 +11,13 @@ node_modules/
 dist/
 build/
 .vite/
+# Configuration locale : jamais commitée. `.env.example` est le modèle, lui commité — d'où
+# l'exception explicite ci-dessous, qui documente l'intention au lieu de la laisser au hasard
+# des motifs.
 .env
 .env.local
+.env.*.local
+!.env.example
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
