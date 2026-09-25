@@ -45,6 +45,11 @@ du changement, 15 pts de produit, 5 pts de journal. Le rendu visuel n'est pas no
 
 ## Rappels qui coûtent cher si on les oublie
 
+- **Un test vert en local ne prouve rien sur la branche.** L'arbre de travail peut contenir des
+  fichiers encore non commités : le code paraît alors terminé alors qu'il ne compile pas une fois
+  mergé — c'est arrivé sur les tickets `#9` et `#7`, corrigé par `#31`. Avant tout merge, vérifier la
+  branche telle qu'elle arrivera sur `main` : `git stash push -u`, puis compiler et tester ; ou
+  compiler un clone propre de la branche.
 - `.gitignore` (Java **et** JS) doit être déjà commité avant toute ligne de code.
 - Au moins une issue doit être ouverte : le malus « aucune issue » est de −10.
 - Le hash soumis dans `SOUMISSION.md` doit être sur **`main`**.
