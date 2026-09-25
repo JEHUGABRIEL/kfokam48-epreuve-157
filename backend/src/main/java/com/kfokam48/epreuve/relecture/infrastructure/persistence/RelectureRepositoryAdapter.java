@@ -38,8 +38,10 @@ public class RelectureRepositoryAdapter implements RelectureRepository {
     }
 
     @Override
-    public Optional<Relecture> trouverParExerciceId(Long exerciceId) {
-        return jpaRepository.findByExerciceId(exerciceId).map(mapper::versModele);
+    public List<Relecture> trouverParExerciceId(Long exerciceId) {
+        return jpaRepository.findByExerciceId(exerciceId).stream()
+                .map(mapper::versModele)
+                .toList();
     }
 
     @Override
@@ -70,10 +72,20 @@ public class RelectureRepositoryAdapter implements RelectureRepository {
         if (etudiantIds.isEmpty()) {
             return moyennes;
         }
-        for (Object[] ligne : jpaRepository.moyenneParAuteur(etudiantIds)) {
+
+        // La requête rend une moyenne **par exercice**. Il en faut une par auteur, sinon un exercice
+        // relu par deux pairs pèserait deux fois plus lourd qu'un exercice relu par un seul : la
+        // moyenne de l'étudiant porte sur les notes retenues, pas sur toutes les notes reçues (RG14,
+        // révisée à l'étape 3). Le cumul se fait ici, sur au plus deux lignes par exercice.
+        Map<Long, double[]> cumuls = new HashMap<>();
+        for (Object[] ligne : jpaRepository.moyenneParExerciceEtAuteur(etudiantIds)) {
+            double[] cumul = cumuls.computeIfAbsent((Long) ligne[0], auteur -> new double[2]);
             // avg() renvoie un type dépendant du dialecte : on lit un Number, pas un Double supposé.
-            moyennes.put((Long) ligne[0], ((Number) ligne[1]).doubleValue());
+            cumul[0] += ((Number) ligne[2]).doubleValue();
+            cumul[1] += 1;
         }
+
+        cumuls.forEach((auteur, cumul) -> moyennes.put(auteur, cumul[0] / cumul[1]));
         return moyennes;
     }
 

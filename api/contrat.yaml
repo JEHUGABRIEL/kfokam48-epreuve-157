@@ -265,9 +265,12 @@ paths:
   /api/relectures/recues:
     get:
       summary: >
-        Relecture reçue par un étudiant pour une session donnée (EF7, RG6). Ajoutée hors
-        contrat imposé : le contrat n'offrait aucun moyen de lire une note, seulement d'en
-        écrire une. Expose note et commentaire, jamais l'identité du relecteur.
+        Note retenue d'un exercice, vue par son auteur (EF7, RG6). Ajoutée hors contrat
+        imposé : le contrat n'offrait aucun moyen de lire une note, seulement d'en écrire
+        une. Expose la note retenue et le commentaire, jamais l'identité des relecteurs.
+        Depuis le changement de besoin de l'étape 3, un exercice est relu par deux pairs : la
+        note retenue est la moyenne des deux, ou la seule note rendue si une seule l'est —
+        auquel cas `provisoire` vaut true.
       parameters:
         - name: etudiantId
           in: query
@@ -280,18 +283,30 @@ paths:
       responses:
         "200":
           description: >
-            Relecture de l'exercice déposé par cet étudiant pour cette session.
-            Tant que le relecteur n'a pas rendu, statut vaut ASSIGNEE et note et
-            commentaire sont nuls.
+            Note retenue de l'exercice déposé par cet étudiant pour cette session.
+            Tant qu'aucune relecture n'est rendue, statut vaut ASSIGNEE et note et
+            commentaire sont nuls. Quand les deux relectures sont rendues, les deux
+            commentaires sont concaténés, dans l'ordre des rendus, sans aucun nom.
           content:
             application/json:
               schema:
                 type: object
-                required: [statut]
+                required: [statut, provisoire]
                 properties:
                   statut: { type: string }
-                  note: { type: integer, nullable: true }
+                  # Nombre et non entier : la note retenue est une moyenne. La réponse de
+                  # l'opération imposée POST /api/relectures/{id} reste entière, elle.
+                  note: { type: number, nullable: true }
                   commentaire: { type: string, nullable: true }
+                  provisoire:
+                    type: boolean
+                    description: >
+                      Vrai tant que les deux relectures attendues n'ont pas rendu : la note
+                      affichée est celle du seul pair qui a rendu, et elle peut encore changer.
+                      Un booléen explicite plutôt qu'un statut à interpréter — le client lit
+                      ce qu'il doit lire au lieu de deviner si RENDUE veut dire « définitif ».
+                      Avec un seul pair disponible, la note reste provisoire indéfiniment :
+                      le cas est assumé et documenté au cahier des charges, §7.
         "404": { $ref: "#/components/responses/Erreur" }   # RELECTURE_INCONNUE
 
   /api/tableau:
