@@ -95,6 +95,13 @@ paths:
         "400": { $ref: "#/components/responses/Erreur" }   # CODE_INCONNU
         "409": { $ref: "#/components/responses/Erreur" }   # DEJA_PRESENT
         "410": { $ref: "#/components/responses/Erreur" }   # CODE_EXPIRE
+        # --- Ajout hors contrat imposé, cf. cahier des charges section 7 ---
+        # RG8 (Q4) : après 5 échecs de code pour le même etudiantId, blocage de 2 minutes.
+        # L'Annexe B ne prévoyait aucun statut pour une tentative bloquée ; sans ce code,
+        # RG8 n'est pas observable par un client. Statut ajouté à une opération imposée :
+        # extension assumée et documentée, les trois statuts imposés ci-dessus restant
+        # inchangés. Le blocage vaut quel que soit le code saisi, y compris un code inconnu.
+        "429": { $ref: "#/components/responses/Erreur" }   # TROP_DE_TENTATIVES
 
   /api/exercices:
     post:
