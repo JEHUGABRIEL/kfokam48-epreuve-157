@@ -19,6 +19,7 @@ import com.kfokam48.epreuve.session.domain.model.StatutSession;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -132,6 +133,36 @@ class PresenceServiceTest {
                 .willReturn(Optional.of(new Presence()));
 
         assertThatThrownBy(() -> presenceService.marquer(new MarquerPresenceRequest("ABC234", 7L)))
+                .isInstanceOf(DejaPresentException.class);
+    }
+
+    // #78 — le cas signalé : deux saisies du même étudiant arrivent presque en même temps. La lecture
+    // ci-dessus ne voit rien (la première n'est pas encore écrite), donc les deux requêtes tentent
+    // l'insertion, et la contrainte d'unicité de la base rejette la seconde. C'est la base qui a raison
+    // (ENF4), mais le contrat impose 409 DEJA_PRESENT : l'erreur de stockage doit être traduite, pas
+    // laissée remonter en 500 ERREUR_INTERNE. Ce test échoue tant que la traduction n'existe pas.
+    @Test
+    void une_seconde_saisie_rejetee_par_la_base_sort_en_409_pas_en_500() {
+        given(sessionRepository.trouverParCode("ABC234")).willReturn(Optional.of(sessionOuverte()));
+        given(presenceRepository.trouverParSessionEtEtudiant(10L, 7L)).willReturn(Optional.empty());
+        given(presenceRepository.enregistrer(any())).willThrow(new DataIntegrityViolationException(
+                "duplicate key value violates unique constraint \"uq_presence_session_etudiant\""));
+
+        assertThatThrownBy(() -> presenceService.marquer(new MarquerPresenceRequest("ABC234", 7L)))
+                .isInstanceOf(DejaPresentException.class);
+    }
+
+    // #78 — même porte, autre entrée : l'ajout manuel du formateur subit la même course.
+    @Test
+    void un_ajout_du_formateur_rejete_par_la_base_sort_en_409_pas_en_500() {
+        given(sessionRepository.trouverParId(10L)).willReturn(Optional.of(sessionOuverte()));
+        given(etudiantRepository.trouverParId(7L)).willReturn(Optional.of(new Etudiant()));
+        given(presenceRepository.trouverParSessionEtEtudiant(10L, 7L)).willReturn(Optional.empty());
+        given(presenceRepository.enregistrer(any())).willThrow(new DataIntegrityViolationException(
+                "duplicate key value violates unique constraint \"uq_presence_session_etudiant\""));
+
+        assertThatThrownBy(() -> presenceService.ajouterParFormateur(
+                new AjouterPresenceFormateurRequest(10L, 7L)))
                 .isInstanceOf(DejaPresentException.class);
     }
 
