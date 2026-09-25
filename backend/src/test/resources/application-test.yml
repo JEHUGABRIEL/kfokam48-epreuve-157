@@ -1,0 +1,23 @@
+# Profil "test" — activé par @ActiveProfiles("test") sur les tests d'intégration.
+#
+# Base embarquée H2 : ./mvnw test doit tourner sans Docker, sans PostgreSQL et sans réseau.
+# Le jeu de données de démonstration (V2) n'est donc pas chargé ici : les tests créent
+# eux-mêmes les données dont ils ont besoin.
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:epreuve;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    # Autorisé dans les tests uniquement (B5 interdit ddl-auto hors tests).
+    # Le schéma de test vient des entités ; les migrations V1/V2 sont validées
+    # contre un vrai PostgreSQL, pas contre H2.
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+  flyway:
+    enabled: false
