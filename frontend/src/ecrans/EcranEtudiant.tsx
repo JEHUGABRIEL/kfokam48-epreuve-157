@@ -197,12 +197,25 @@ export function EcranEtudiant({ section }: Props) {
           {chargement && <Chargement texte="Envoi en cours…" />}
           {note !== null && (
             <div className="resultat">
-              {note.statut === 'RENDUE' ? (
+              {note.statut === 'RENDUE' && note.note !== null ? (
                 <p>
-                  <strong className="note">{note.note}/20</strong> — {note.commentaire}
+                  <strong className="note">{note.note}/20</strong>{' '}
+                  {/* Le client a demandé qu'une note en attente du second pair soit « marquée comme
+                      provisoire ». Le mot est répété à l'écran plutôt que suggéré par une couleur :
+                      une note lue dans un couloir ne doit pas dépendre de la nuance d'un fond. */}
+                  {note.provisoire ? (
+                    <span className="etat-note provisoire">
+                      note provisoire — en attente du second relecteur
+                    </span>
+                  ) : (
+                    <span className="etat-note definitive">
+                      note définitive — moyenne des deux relecteurs
+                    </span>
+                  )}
+                  {note.commentaire !== null && note.commentaire !== '' && <> — {note.commentaire}</>}
                 </p>
               ) : (
-                <p>Relecture assignée, pas encore rendue. L'identité du relecteur reste confidentielle.</p>
+                <p>Relecture assignée, pas encore rendue. L'identité des relecteurs reste confidentielle.</p>
               )}
             </div>
           )}
