@@ -4,13 +4,24 @@ import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
 import { Pagination } from '../ui/Pagination';
 import { usePromotions } from '../ui/useListes';
+import type { Section } from '../ui/roles';
 
 /**
- * Écran formateur — EF2 (ouvrir une session et obtenir un code), EF8 (clôturer), EF9 (tableau).
+ * Écran formateur — EF2 (ouvrir une séance et obtenir un code), EF8 (clôturer), EF9 (tableau).
+ *
+ * La fonctionnalité affichée est celle choisie dans la barre latérale : la séance d'un côté, le
+ * tableau de l'autre. Le choix de la promotion, lui, reste visible dans les deux cas — c'est le
+ * contexte commun des deux fonctionnalités, et un tableau sans promotion choisie ne serait qu'un
+ * bouton qui refuse d'agir.
  *
  * La moyenne affichée vient de l'API : elle n'est jamais recalculée ici (F3).
  */
-export function EcranFormateur() {
+
+type Props = {
+  section: Section;
+};
+
+export function EcranFormateur({ section }: Props) {
   const [pagePromotions, setPagePromotions] = useState(1);
   const promotions = usePromotions(pagePromotions);
   const [promotionId, setPromotionId] = useState<number | null>(null);
@@ -100,7 +111,7 @@ export function EcranFormateur() {
       <Succes message={succes} />
 
       <div className="carte">
-        <h3>Ouvrir une session</h3>
+        <h3>Promotion suivie</h3>
         <ListeDeroulante
           libelle="Promotion"
           etat={promotions}
@@ -114,67 +125,76 @@ export function EcranFormateur() {
           taille={TAILLE_PAGE}
           onPage={choisirPagePromotions}
         />
-        <label>
-          Titre de la séance
-          <input value={titre} onChange={(evenement) => setTitre(evenement.target.value)} />
-        </label>
-        <button type="button" onClick={ouvrir} disabled={chargement}>
-          Ouvrir et obtenir le code
-        </button>
-
-        {session !== null && (
-          <div className="resultat">
-            <p>
-              Code : <strong className="code">{session.code}</strong>
-            </p>
-            <p className="discret">
-              Valable jusqu'à {new Date(session.expirationAt).toLocaleTimeString()} (RG1 : 15 minutes).
-            </p>
-            <button type="button" onClick={cloturer} disabled={chargement}>
-              Clôturer la session
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="carte">
-        <h3>Tableau récapitulatif</h3>
-        <button type="button" onClick={() => void chargerTableau(1)} disabled={chargement}>
-          Afficher le tableau de la promotion
-        </button>
-        {chargement && <Chargement texte="Chargement…" />}
-        {tableau !== null && (
-          <table>
-            <thead>
-              <tr>
-                <th>Étudiant</th>
-                <th>Présences</th>
-                <th>Exercices déposés</th>
-                <th>Moyenne</th>
-                <th>Relectures en attente</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableau.map((ligne) => (
-                <tr key={ligne.etudiantId}>
-                  <td>{ligne.nom}</td>
-                  <td>{ligne.presences}</td>
-                  <td>{ligne.exercicesDeposes}</td>
-                  {/* La moyenne vient de l'API ; « — » signifie « aucune note reçue », pas « 0 ». */}
-                  <td>{ligne.moyenne === null ? '—' : ligne.moyenne}</td>
-                  <td>{ligne.relecturesEnAttente}</td>
+      {section === 'seance' && (
+        <div className="carte">
+          <h3>Ouvrir une séance</h3>
+          <label>
+            Titre de la séance
+            <input value={titre} onChange={(evenement) => setTitre(evenement.target.value)} />
+          </label>
+          <button type="button" onClick={ouvrir} disabled={chargement}>
+            Ouvrir et obtenir le code
+          </button>
+
+          {session !== null && (
+            <div className="resultat">
+              <p>
+                Code : <strong className="code">{session.code}</strong>
+              </p>
+              <p className="discret">
+                Valable jusqu'à {new Date(session.expirationAt).toLocaleTimeString()} (RG1 : 15
+                minutes).
+              </p>
+              <button type="button" onClick={cloturer} disabled={chargement}>
+                Clôturer la session
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {section === 'tableau' && (
+        <div className="carte">
+          <h3>Tableau récapitulatif</h3>
+          <button type="button" onClick={() => void chargerTableau(1)} disabled={chargement}>
+            Afficher le tableau de la promotion
+          </button>
+          {chargement && <Chargement texte="Chargement…" />}
+          {tableau !== null && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Étudiant</th>
+                  <th>Présences</th>
+                  <th>Exercices déposés</th>
+                  <th>Moyenne</th>
+                  <th>Relectures en attente</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        <Pagination
-          page={pageTableau}
-          total={totalTableau}
-          taille={TAILLE_PAGE}
-          onPage={(page) => void chargerTableau(page)}
-        />
-      </div>
+              </thead>
+              <tbody>
+                {tableau.map((ligne) => (
+                  <tr key={ligne.etudiantId}>
+                    <td>{ligne.nom}</td>
+                    <td>{ligne.presences}</td>
+                    <td>{ligne.exercicesDeposes}</td>
+                    {/* La moyenne vient de l'API ; « — » signifie « aucune note reçue », pas « 0 ». */}
+                    <td>{ligne.moyenne === null ? '—' : ligne.moyenne}</td>
+                    <td>{ligne.relecturesEnAttente}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <Pagination
+            page={pageTableau}
+            total={totalTableau}
+            taille={TAILLE_PAGE}
+            onPage={(page) => void chargerTableau(page)}
+          />
+        </div>
+      )}
     </section>
   );
 }

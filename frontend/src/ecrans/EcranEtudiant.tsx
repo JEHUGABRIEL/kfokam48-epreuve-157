@@ -4,6 +4,7 @@ import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
 import { Pagination } from '../ui/Pagination';
 import { useEtudiants, usePromotions } from '../ui/useListes';
+import type { Section } from '../ui/roles';
 
 /**
  * Écran étudiant — EF1 (marquer sa présence avec le code), EF3 (déposer un exercice), EF7 (consulter
@@ -12,8 +13,17 @@ import { useEtudiants, usePromotions } from '../ui/useListes';
  * Q1 : l'étudiant s'identifie en se choisissant dans une liste ; il n'y a pas de mot de passe. Le
  * choix est conservé en mémoire du composant, pas dans le stockage du navigateur : rien ne justifie de
  * laisser un identifiant traîner sur un téléphone partagé.
+ *
+ * L'identification reste affichée quelle que soit la fonctionnalité ouverte : on ne marque pas une
+ * présence ni ne dépose un exercice avant d'avoir dit qui l'on est, et cacher la liste obligerait à
+ * revenir en arrière pour la moindre correction.
  */
-export function EcranEtudiant() {
+
+type Props = {
+  section: Section;
+};
+
+export function EcranEtudiant({ section }: Props) {
   const [pagePromotions, setPagePromotions] = useState(1);
   const promotions = usePromotions(pagePromotions);
   const [promotionId, setPromotionId] = useState<number | null>(null);
@@ -136,64 +146,68 @@ export function EcranEtudiant() {
         />
       </div>
 
-      <div className="carte">
-        <h3>Marquer ma présence</h3>
-        <label>
-          Code annoncé en salle
-          <input
-            value={code}
-            autoComplete="off"
-            onChange={(evenement) => setCode(evenement.target.value.toUpperCase())}
-          />
-        </label>
-        <button type="button" onClick={marquerPresence} disabled={chargement}>
-          Marquer ma présence
-        </button>
-        <p className="discret">
-          Le code expire 15 minutes après l'ouverture (RG1), et 5 erreurs bloquent 2 minutes (RG8).
-        </p>
-      </div>
-
-      <div className="carte">
-        <h3>Mon exercice</h3>
-        <label>
-          Numéro de session
-          <input
-            value={sessionId}
-            inputMode="numeric"
-            onChange={(evenement) => setSessionId(evenement.target.value)}
-          />
-        </label>
-        <label>
-          Lien de mon exercice
-          <input
-            value={lien}
-            placeholder="https://…"
-            onChange={(evenement) => setLien(evenement.target.value)}
-          />
-        </label>
-        <div className="boutons">
-          <button type="button" onClick={deposer} disabled={chargement}>
-            Déposer le lien
+      {section === 'presence' && (
+        <div className="carte">
+          <h3>Marquer ma présence</h3>
+          <label>
+            Code annoncé en salle
+            <input
+              value={code}
+              autoComplete="off"
+              onChange={(evenement) => setCode(evenement.target.value.toUpperCase())}
+            />
+          </label>
+          <button type="button" onClick={marquerPresence} disabled={chargement}>
+            Marquer ma présence
           </button>
-          <button type="button" onClick={consulterNote} disabled={chargement}>
-            Voir ma note
-          </button>
+          <p className="discret">
+            Le code expire 15 minutes après l'ouverture (RG1), et 5 erreurs bloquent 2 minutes (RG8).
+          </p>
         </div>
+      )}
 
-        {chargement && <Chargement texte="Envoi en cours…" />}
-        {note !== null && (
-          <div className="resultat">
-            {note.statut === 'RENDUE' ? (
-              <p>
-                <strong className="note">{note.note}/20</strong> — {note.commentaire}
-              </p>
-            ) : (
-              <p>Relecture assignée, pas encore rendue. L'identité du relecteur reste confidentielle.</p>
-            )}
+      {section === 'exercice' && (
+        <div className="carte">
+          <h3>Mon exercice</h3>
+          <label>
+            Numéro de session
+            <input
+              value={sessionId}
+              inputMode="numeric"
+              onChange={(evenement) => setSessionId(evenement.target.value)}
+            />
+          </label>
+          <label>
+            Lien de mon exercice
+            <input
+              value={lien}
+              placeholder="https://…"
+              onChange={(evenement) => setLien(evenement.target.value)}
+            />
+          </label>
+          <div className="boutons">
+            <button type="button" onClick={deposer} disabled={chargement}>
+              Déposer le lien
+            </button>
+            <button type="button" onClick={consulterNote} disabled={chargement}>
+              Voir ma note
+            </button>
           </div>
-        )}
-      </div>
+
+          {chargement && <Chargement texte="Envoi en cours…" />}
+          {note !== null && (
+            <div className="resultat">
+              {note.statut === 'RENDUE' ? (
+                <p>
+                  <strong className="note">{note.note}/20</strong> — {note.commentaire}
+                </p>
+              ) : (
+                <p>Relecture assignée, pas encore rendue. L'identité du relecteur reste confidentielle.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
