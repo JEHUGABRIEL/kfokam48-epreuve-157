@@ -115,6 +115,7 @@ Opérations ajoutées, documentées dans le contrat et en §7 du cahier des char
 | `GET /api/promotions`, `GET /api/etudiants` | le formateur doit choisir une promotion (EF2), l'étudiant s'identifie en se choisissant dans une liste (Q1) |
 | `GET /api/relectures/assignees` | c'est la seule façon pour le relecteur de connaître l'identifiant à passer au `POST` imposé |
 | `GET /api/relectures/recues` | EF7 / RG6 : le contrat permettait d'écrire une note, pas de la lire |
+| `POST /api/presences/formateur` | RG11 / Q14 : le formateur ajoute une présence à la main (souci de téléphone), marquée `source = FORMATEUR` pour que l'ajout se voie |
 
 Le frontend livre les trois écrans (F2) : formateur (ouvrir, clôturer, tableau), étudiant (présence,
 dépôt, note reçue), relecteur (relectures à rendre). Tous les `fetch` sont dans
@@ -123,9 +124,6 @@ vient de `GET /api/tableau` (F3).
 
 **N'est pas livré** — annoncé plutôt que découvert à la correction :
 
-- **L'ajout manuel d'une présence par le formateur (RG11, Q14)** n'est pas implémenté : la colonne
-  `source` et les données de démonstration le prévoient, mais l'opération n'existe pas encore
-  (ticket `#11`).
 - **Aucune authentification** (Q1, ENF5) : l'identification se fait en choisissant un nom dans une
   liste, et un `etudiantId` transmis par le client n'est pas vérifié côté serveur. Hors périmètre
   assumé.

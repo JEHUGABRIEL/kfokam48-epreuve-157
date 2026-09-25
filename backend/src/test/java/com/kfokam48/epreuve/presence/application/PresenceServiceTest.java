@@ -1,5 +1,8 @@
 package com.kfokam48.epreuve.presence.application;
 
+import com.kfokam48.epreuve.common.referentiel.domain.EtudiantRepository;
+import com.kfokam48.epreuve.common.referentiel.domain.model.Etudiant;
+import com.kfokam48.epreuve.presence.application.dto.AjouterPresenceFormateurRequest;
 import com.kfokam48.epreuve.presence.application.dto.MarquerPresenceRequest;
 import com.kfokam48.epreuve.presence.application.dto.PresenceResponse;
 import com.kfokam48.epreuve.presence.domain.CodeExpireException;
@@ -34,15 +37,56 @@ class PresenceServiceTest {
 
     private PresenceRepository presenceRepository;
     private SessionRepository sessionRepository;
+    private EtudiantRepository etudiantRepository;
     private PresenceService presenceService;
 
     @BeforeEach
     void preparerLeService() {
         presenceRepository = mock(PresenceRepository.class);
         sessionRepository = mock(SessionRepository.class);
+        etudiantRepository = mock(EtudiantRepository.class);
         // Le vrai compteur : RG8 est une règle en mémoire, la simuler testerait la simulation.
-        presenceService = new PresenceService(presenceRepository, sessionRepository,
+        presenceService = new PresenceService(presenceRepository, sessionRepository, etudiantRepository,
                 new CompteurDeTentatives());
+    }
+
+    // RG11 / Q14 : le formateur ajoute la présence à la main, et l'ajout doit se VOIR.
+    @Test
+    void le_formateur_ajoute_une_presence_marquee_comme_telle() {
+        given(sessionRepository.trouverParId(10L)).willReturn(Optional.of(sessionOuverte()));
+        given(etudiantRepository.trouverParId(7L)).willReturn(Optional.of(new Etudiant()));
+        given(presenceRepository.trouverParSessionEtEtudiant(10L, 7L)).willReturn(Optional.empty());
+        given(presenceRepository.enregistrer(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        PresenceResponse reponse = presenceService.ajouterParFormateur(
+                new AjouterPresenceFormateurRequest(10L, 7L));
+
+        // La source est le seul moyen, pour le formateur, de distinguer une présence saisie d'un ajout
+        // manuel — et c'est exactement ce que Q14 demande de rendre visible.
+        assertThat(reponse.source()).isEqualTo(SourcePresence.FORMATEUR);
+    }
+
+    @Test
+    void le_formateur_ne_duplique_pas_une_presence_existante() {
+        given(sessionRepository.trouverParId(10L)).willReturn(Optional.of(sessionOuverte()));
+        given(etudiantRepository.trouverParId(7L)).willReturn(Optional.of(new Etudiant()));
+        given(presenceRepository.trouverParSessionEtEtudiant(10L, 7L))
+                .willReturn(Optional.of(new Presence()));
+
+        assertThatThrownBy(() -> presenceService.ajouterParFormateur(
+                new AjouterPresenceFormateurRequest(10L, 7L)))
+                .isInstanceOf(DejaPresentException.class);
+    }
+
+    @Test
+    void le_formateur_ne_rouvre_pas_une_session_cloturee() {
+        Session cloturee = sessionOuverte();
+        cloturee.setStatut(StatutSession.CLOTUREE);
+        given(sessionRepository.trouverParId(10L)).willReturn(Optional.of(cloturee));
+
+        assertThatThrownBy(() -> presenceService.ajouterParFormateur(
+                new AjouterPresenceFormateurRequest(10L, 7L)))
+                .isInstanceOf(SessionDejaClotureeException.class);
     }
 
     @Test

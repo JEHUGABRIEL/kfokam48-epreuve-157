@@ -103,6 +103,41 @@ paths:
         # inchangés. Le blocage vaut quel que soit le code saisi, y compris un code inconnu.
         "429": { $ref: "#/components/responses/Erreur" }   # TROP_DE_TENTATIVES
 
+  /api/presences/formateur:
+    post:
+      summary: >
+        Le formateur ajoute une présence à la main (RG11, Q14 : « ça arrive qu'un étudiant ait un
+        souci de téléphone »). Ajoutée hors contrat imposé APRÈS le gel du contrat : RG11 était la
+        seule règle de gestion sans opération pour l'exprimer, et sans elle la colonne source —
+        dont l'Annexe B rappelle elle-même l'existence — n'avait aucune raison d'être renseignée.
+        Aucun code de présence n'est demandé : le formateur intervient précisément quand l'étudiant
+        n'a pas pu saisir le sien. Documenté en §7 du cahier des charges.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, etudiantId]
+              properties:
+                sessionId: { type: integer, format: int64 }
+                etudiantId: { type: integer, format: int64 }
+      responses:
+        "201":
+          description: Présence ajoutée, marquée source = FORMATEUR
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, sessionId, etudiantId, source]
+                properties:
+                  id: { type: integer, format: int64 }
+                  sessionId: { type: integer, format: int64 }
+                  etudiantId: { type: integer, format: int64 }
+                  source: { type: string, enum: [ETUDIANT, FORMATEUR] }
+        "404": { $ref: "#/components/responses/Erreur" }   # SESSION_INCONNUE | ETUDIANT_INCONNU
+        "409": { $ref: "#/components/responses/Erreur" }   # DEJA_PRESENT | SESSION_DEJA_CLOTUREE
+
   /api/exercices:
     post:
       summary: Un étudiant dépose le lien de son exercice
