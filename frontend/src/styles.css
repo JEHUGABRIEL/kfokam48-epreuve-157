@@ -12,8 +12,9 @@ body {
   line-height: 1.5;
 }
 
-/* F2 : la barre latérale porte le choix du rôle ; le contenu s'affiche à sa droite. Sur un écran
-   étroit (ENF1), les deux colonnes s'empilent et la barre redevient une bande en haut de page. */
+/* F2 : l'écran d'accueil fait choisir le rôle ; ensuite la barre latérale liste les fonctionnalités
+   du rôle, et le contenu s'affiche à sa droite. Sur un écran étroit (ENF1), les deux colonnes
+   s'empilent et la barre redevient une bande en haut de page. */
 .application {
   display: grid;
   grid-template-columns: 18rem minmax(0, 1fr);
@@ -69,7 +70,8 @@ h1 {
   opacity: 0.7;
 }
 
-.lien-role {
+/* Une fonctionnalité du rôle : le libellé cliquable, celui qui est affiché restant marqué. */
+.lien-section {
   display: block;
   width: 100%;
   text-align: left;
@@ -80,21 +82,62 @@ h1 {
   cursor: pointer;
 }
 
-.lien-role.actif {
+.lien-section.actif {
   font-weight: 700;
   border-color: currentColor;
   background: rgba(127, 127, 127, 0.15);
 }
 
-.lien-role-nom {
+.changer-role {
   display: block;
+  width: 100%;
+  margin-top: 1rem;
 }
 
-.lien-role-resume {
+/* Écran d'accueil : une colonne unique et lisible, avant toute interface (ENF1). */
+.accueil {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding-top: 1rem;
+}
+
+.choix-roles {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Un rôle : son nom, ce qu'il recouvre, et les fonctionnalités qu'il ouvrira. */
+.choix-role {
   display: block;
-  font-size: 0.8rem;
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  border: 1px solid #8884;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.choix-role-nom {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.choix-role-resume {
+  display: block;
   font-weight: 400;
-  opacity: 0.75;
+  opacity: 0.85;
+}
+
+.choix-role-fonctions {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 .note-bas {
