@@ -1,7 +1,7 @@
 # Cahier des charges — Épreuve finale fullstack KFOKAM48
 
 **Auteur :** Binga Jehu Gabriel · 157
-**Version :** 1.1 · **Date :** 25.09.2026
+**Version :** 1.2 · **Date :** 25.09.2026
 **Frontend choisi :** React (Vite, TypeScript), pour la cohérence avec l'écosystème du candidat et la rapidité de mise en place d'une SPA sur trois écrans distincts.
 
 ---
@@ -76,7 +76,7 @@ Le relecteur **n'est pas un acteur distinct** : c'est un étudiant assigné dyna
 | RG5 | Le relecteur est tiré au sort par le système, au moment du dépôt de l'exercice, parmi les étudiants ayant déjà marqué présence à cette session | Q7 + hypothèse §7 |
 | RG6 | L'étudiant relu voit sa note et le commentaire, jamais l'identité du relecteur | Q8 |
 | RG7 | Une présence ne peut être marquée qu'avec un code non expiré, et une seule fois par étudiant et par session | Q2, Q3, contrat (409 DEJA_PRESENT) |
-| RG8 | Après 5 échecs de saisie de code par le même étudiant, blocage de 2 minutes avant nouvel essai | Q4 |
+| RG8 | Après 5 échecs de saisie de code par le même étudiant, blocage de 2 minutes avant nouvel essai, refusé en `429 TROP_DE_TENTATIVES` | Q4 + hypothèse §7 (compteur, statut 429) |
 | RG9 | Un exercice peut être déposé jusqu'à la clôture de la session par le formateur, indépendamment de l'heure de fin théorique | Q12 |
 | RG10 | Le lien d'un exercice peut être remplacé tant que le relecteur assigné n'a pas rendu sa relecture | Q13 |
 | RG11 | Une présence ajoutée manuellement par le formateur doit être marquée comme telle (`source = FORMATEUR`) | Q14 |
@@ -88,6 +88,8 @@ Le relecteur **n'est pas un acteur distinct** : c'est un étudiant assigné dyna
 
 **Points que la demande ne tranche pas :**
 
+> **Le trou non comblé par les 16 questions.** Aucune Qx ne dit si un étudiant doit avoir marqué sa présence à la session pour pouvoir y déposer un exercice. Q12 tolère le dépôt jusqu'à la clôture (« certains n'ont pas de connexion le soir même »), ce qui dessine une grande tolérance, mais ne tranche pas le cas de l'absent du jour. C'est ce point qui est retenu comme le trou que ni le client ni les questions posées n'ont comblé — il est tranché en première ligne du tableau ci-dessous.
+
 | Point | Réponse client (Qx) ou hypothèse | Décision retenue | Conséquence |
 |---|---|---|---|
 | Faut-il avoir marqué sa présence pour déposer un exercice ? | Aucune Qx directe. Q12 tolère un dépôt tardif, hors ligne de présence | La présence n'est pas une condition du dépôt : le dépôt est rattaché à `sessionId`, pas à une présence enregistrée | Un étudiant absent peut déposer un exercice de la session — compromis assumé |
@@ -95,14 +97,16 @@ Le relecteur **n'est pas un acteur distinct** : c'est un étudiant assigné dyna
 | Identification de l'appelant sans mot de passe (Q1) | Q1 : sélection dans une liste, rien de plus | `etudiantId` transmis explicitement dans les requêtes qui le demandent ; pour `/api/relectures/{id}`, `{id}` référence une attribution déjà liée à un relecteur précis (issue de Q7) | Sécurité minimale assumée, documentée en ENF5 comme hors périmètre de cette version |
 | Moment du tirage au sort du relecteur (Q7) | Q7 ne précise pas le déclencheur | Le tirage a lieu au moment du dépôt de l'exercice, parmi les présences déjà enregistrées à cet instant | Une présence ajoutée après coup (Q14) n'entre pas dans le pool déjà tiré — limite connue |
 | Aucun étudiant présent éligible comme relecteur | Non couvert par les Qx | L'exercice reste « en attente d'assignation », visible dans le tableau au même titre qu'une relecture non rendue (Q11) | Le formateur peut voir des relectures bloquées sans faute du relecteur |
+| Q13 autorise le remplacement du lien « tant que personne n'a commencé à le relire », mais aucun état « relecture commencée » n'est défini par une Qx | Q13, confrontée à RG10 ; aucune Qx ne définit « commencé » | J'assimile « commencé » à « relecteur assigné » : le lien reste remplaçable jusqu'au **rendu** de la relecture, pas jusqu'à son début | `StatutRelecture` ne vaut que `ASSIGNEE` ou `RENDUE` : la condition littérale de Q13 n'est pas observable dans le modèle retenu. La fenêtre de remplacement est donc plus large que ce que le client a dit — élargissement assumé et écrit ici plutôt que subi |
 | La demande ne précise pas comment le code de présence est transmis aux étudiants | Aucune Qx directe, mais Q4 et Q14 suggèrent un contexte présentiel (code deviné entre étudiants, souci de téléphone en salle) | Hypothèse : la distribution du code est un acte humain hors périmètre applicatif — le formateur l'affiche/l'annonce en salle, l'étudiant le saisit manuellement. Aucune fonctionnalité d'envoi (SMS, email, QR code) n'est développée | Confirme l'exclusion déjà actée en section 3 (pas de notification) |
 | Le système ne distingue les rôles (étudiant/relecteur/formateur) par aucun mécanisme d'authentification — Q1 exclut le mot de passe, mais aucune Qx ne couvre le cas du formateur | Q1 (étudiant uniquement) ; silence total sur le formateur | Étudiant : identification faible par sélection dans une liste, etudiantId propagé côté client (localStorage), sans vérification serveur — risque d'usurpation assumé conformément à Q1. Formateur : route /formateur protégée uniquement par un code d'accès statique côté front (variable d'environnement), non lié au backend, à seule fin d'éviter l'accès accidentel — ce n'est pas une authentification réelle | Documenté comme limitation connue en ENF5, hors périmètre d'un vrai contrôle d'accès (cf. section 3) |
+| RG8 (5 échecs de code ⇒ blocage 2 min) impose un compteur serveur par étudiant, alors qu'ENF5 exclut toute session utilisateur ; le contrat imposé ne prévoit par ailleurs aucun statut pour une tentative bloquée, alors que Q4 attend un refus explicite | Q4 demande le blocage ; aucune Qx ne dit où le compteur vit, ni ce que le client reçoit pendant le blocage | Compteur en mémoire applicative, indexé par `etudiantId` **seul** — jamais `(etudiantId, sessionId)`, car un code inconnu (400 `CODE_INCONNU`) ne permet pas de retrouver la session visée. Il n'entre donc pas dans le schéma versionné par Flyway. Une tentative présentée pendant le blocage est refusée en **429 `TROP_DE_TENTATIVES`**, statut ajouté au contrat sur `POST /api/presences` | État volatil : un redémarrage remet les compteurs à zéro, ce qui est acceptable pour un blocage de 2 minutes et évite une table dont le cycle de vie n'est pas demandé. Ajouter un statut à une opération imposée est une extension assumée du contrat — assumée parce que sans elle RG8 n'est pas observable par un client ; `api/contrat.yaml` le porte avant le premier commit de code de `presence/`, les trois statuts imposés (400/409/410) restant inchangés |
 
 **Contradictions relevées :**
 
 | Réponses en conflit | Ce que j'ai choisi | Pourquoi |
 |---|---|---|
-| Q10 (correction possible avant clôture) vs Q15 (note définitive dès l'envoi) | Q15 retenue : verrouillage immédiat dès validation | Q15 est un principe assumé et justifié sur le fond ; il prévaut sur une réponse technique ponctuelle antérieure |
+| Q10 (correction possible avant clôture) vs Q15 (note définitive dès l'envoi) | Q15 retenue : verrouillage immédiat dès validation | Q15 est formulée comme un principe assumé et justifié sur le fond — « une fois que le relecteur a validé, c'est fini, il ne peut plus y revenir. C'est plus honnête pour tout le monde » — et non comme une réponse technique ponctuelle. Je la traite comme la position finale du client, qui prévaut sur Q10 |
 
 ## 8. Contraintes techniques
 
@@ -169,5 +173,6 @@ Les commits `[JALON]` font exception : ils se posent directement sur `main`, vid
 |---|---|---|
 | 1 | 25.09.2026 | Version initiale |
 | 1.1 | 25.09.2026 | Convention de branches et de PR rendue explicite : nommage (`feat/<n°issue>-<slug>`, `fix/<n°issue>-<slug>`), une branche par ticket sans exception, exception des commits `[JALON]` posés sur `main`, `main` tenue à jour. L'analyse ne fixait le principe que par une demi-phrase (« une branche par ticket ») sans nommage ni cycle de vie — insuffisant pour être appliqué sans interprétation. |
+| 1.2 | 25.09.2026 | Section 7 complétée après relecture des 16 `Qx` contre `CLIENT.md` : le trou du sujet est nommé (la présence est-elle requise pour déposer un exercice ?), le compteur de RG8 est situé (`etudiantId` seul) et le statut `429 TROP_DE_TENTATIVES` ajouté à `api/contrat.yaml` pour rendre la règle observable, et Q13 est tranchée contre RG10 — la condition « relecture commencée » n'étant pas observable dans le modèle retenu. |
 
 *L'étape 3 rendra une partie de ce document faux. Reviens le corriger et note-le ici — un cahier des charges périmé est un cahier des charges mort.*
