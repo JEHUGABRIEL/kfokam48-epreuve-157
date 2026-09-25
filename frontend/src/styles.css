@@ -12,9 +12,22 @@ body {
   line-height: 1.5;
 }
 
+/* F2 : la barre latérale porte le choix du rôle ; le contenu s'affiche à sa droite. Sur un écran
+   étroit (ENF1), les deux colonnes s'empilent et la barre redevient une bande en haut de page. */
 .application {
-  max-width: 60rem;
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  max-width: 72rem;
   margin: 0 auto;
+  padding-top: 1rem;
+}
+
+@media (max-width: 48rem) {
+  .application {
+    grid-template-columns: 1fr;
+  }
 }
 
 h1 {
@@ -27,25 +40,65 @@ h1 {
   opacity: 0.7;
 }
 
-.onglets {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+.barre-laterale {
+  position: sticky;
+  top: 1rem;
+  border: 1px solid #8884;
+  border-radius: 8px;
+  padding: 1rem;
 }
 
-.onglet {
-  padding: 0.6rem 1rem;
-  border: 1px solid #888;
+@media (max-width: 48rem) {
+  .barre-laterale {
+    position: static;
+  }
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.etiquette {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.lien-role {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #8884;
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
 }
 
-.onglet.actif {
+.lien-role.actif {
   font-weight: 700;
   border-color: currentColor;
   background: rgba(127, 127, 127, 0.15);
+}
+
+.lien-role-nom {
+  display: block;
+}
+
+.lien-role-resume {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.note-bas {
+  margin-top: 1.5rem;
 }
 
 .carte {
