@@ -118,7 +118,7 @@ Tout ce qui suit est arrivé sur `main` **après** le jalon `[JALON] v1.0`, dans
   la barre latérale liste ensuite les fonctionnalités du rôle, avec un retour au choix du rôle. Le
   catalogue des rôles est une source unique, partagée par l'accueil et la barre latérale, pour que les
   deux ne puissent pas se contredire.
-- **Remises à jour du dossier** (`#36`, `#51`, `#53`, `#55`, `#58`, `#60`, `#62`, `#68`, `#74`) :
+- **Remises à jour du dossier** (`#36`, `#51`, `#53`, `#55`, `#58`, `#60`, `#62`, `#68`, `#74`, `#76`) :
   README, cahier des charges, journal de bord, et relevé du hash de soumission. Ces tickets ne
   changent pas l'application, ils la décrivent — et deux d'entre eux (`#51`, `#74`) ont été ouverts
   parce qu'un document affirmait quelque chose que le code livré démentait.

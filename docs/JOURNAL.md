@@ -105,6 +105,11 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 6 — Soumission
 
-**Fait :**
+**Fait :** le dossier de soumission est recomposé contre l'état **réel** de `main`, et non contre un état de mémoire : hash relevé par `git rev-parse`, puis vérifié par appel à l'API du dépôt — un hash que GitHub ne connaît pas rend la partie non corrigible, c'est la seule erreur de la journée qui ne se rattrape pas. Le fichier dit aussi ce qui est livré, y compris les quatre tickets de la fin (`#64`, `#66`, `#70`, `#72`), et ce qui ne l'est pas. Les six premières cases de la checklist de téléversement sont vérifiées ; les deux dernières sont les miennes, et le resteront jusqu'à l'envoi : le matricule exact, le centre, et le téléversement.
 
 **Ce que je referais autrement avec une journée de plus :**
+
+- **Relire les documents après chaque livraison, pas le soir.** Deux relectures ont trouvé la même chose à des heures différentes : le `README` annonçait des opérations `PUT`/`GET` jamais implémentées (fin d'étape 4), et `knowledge.md` décrivait encore un projet d'avant sa première compilation, avec un `localStorage` et une route protégée qui n'ont jamais existé (relecture finale). Une phrase écrite le matin devient fausse sans prévenir, et c'est la seule dette qui ne se voit pas dans `git status`.
+- **Réclamer l'enveloppe et le bundle tôt, et par écrit.** 27 points (10 + 17) ne sont pas partis faute de scripts remis. L'étape 3 devait rendre une partie de mon analyse fausse — c'est la confrontation la plus formatrice de l'exercice, et elle n'a pas eu lieu. C'est la leçon la plus chère de la journée, et elle ne se rattrape pas.
+- **Appeler l'API comme un tiers, plus tôt.** L'écart le plus grave — des opérations annoncées au contrat et jamais implémentées — ne se voyait ni dans les tests, ni dans le build, ni dans une relecture du code : il ne se voyait qu'en passant les appels du `README` dans l'ordre, comme le ferait un correcteur pressé.
+- **Ne pas réécrire l'historique Git.** Un `--force-with-lease` pour retirer le trailer `Codebuff` a consommé 5 points pour rien : les arbres étaient identiques avant et après, seuls les messages changeaient. Sur `main`, un historique imparfait vaut mieux qu'un historique réécrit.

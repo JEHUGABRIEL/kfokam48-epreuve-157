@@ -20,15 +20,18 @@
 | | |
 |---|---|
 | Dépôt (public) | `https://github.com/JEHUGABRIEL/kfokam48-epreuve-157` |
-| Commit final — hash complet, 40 caractères | `491913c6f9822e332b9f2330269d77c9e3364293` |
+| Commit final — hash complet, 40 caractères | `9691d2f44d1d4ae865021c72cc44a990197dcc63` |
 | Branche | `main` |
 
 Le hash déclaré est celui du commit de merge qui précède immédiatement l'écriture de ces lignes. Il
-contient l'intégralité du travail : les six modules backend, le frontend, l'analyse corrigée, le journal,
-les deux tickets livrés après le premier relevé — le correctif des listes déroulantes et la barre
-latérale — et la version de ce fichier qui décrit l'état exact du livrable. **Aucun changement n'est
-postérieur à l'inscription de ce hash-ci** — un fichier ne peut pas contenir le hash du commit qui le
-porte.
+contient l'intégralité du travail : les six modules backend, le frontend — écran de choix du rôle, barre
+latérale de fonctionnalités, pagination —, l'analyse corrigée, le journal, et les quatre tickets livrés
+après le premier relevé : le correctif des listes déroulantes (`#64`), la barre latérale des rôles
+(`#66`), la pagination des lectures (`#70`) et l'écran d'accueil (`#72`).
+
+**Aucun changement n'est postérieur à l'inscription de ce hash-ci** — un fichier ne peut pas contenir le
+hash du commit qui le porte. Le commit qui écrit ces lignes vient donc après, forcément : il ne touche
+que ce dossier, et c'est le seul.
 
 ## Épreuve Git — étape 5
 
@@ -66,20 +69,27 @@ l'`enveloppe` de l'étape 3. C'est écrit dans `docs/JOURNAL.md` plutôt que pas
 Plus l'assignation automatique du relecteur par tirage au sort parmi les présents, jamais l'auteur
 (EF5, RG2, RG5, RG4) ; la clôture de session qui verrouille toute écriture (EF8, RG13) ; la note reçue
 sans l'identité du relecteur (EF7, RG6) ; le remplacement du lien (EF4, RG10) ; l'ajout manuel d'une
-présence par le formateur, marqué `source = FORMATEUR` (RG11, Q14) ; et les listes d'identification
-(Q1). Le tout est vérifié sur PostgreSQL réel, pas seulement en test : les quinze appels du parcours
-complet rendent exactement les statuts imposés.
+présence par le formateur, marqué `source = FORMATEUR` (RG11, Q14) ; les listes d'identification (Q1) ;
+et la pagination (`#70`) — `page` et `taille` en paramètres **optionnels** sur les quatre lectures, la
+réponse restant un tableau JSON et le total partant dans l'en-tête `X-Total-Count`. Un appel sans
+paramètre rend toujours la collection entière : c'est le contrat imposé, et il n'a pas bougé. Le tout
+est vérifié sur PostgreSQL réel, pas seulement en test : les quinze appels du parcours complet rendent
+exactement les statuts imposés.
 
-**Frontend** : une barre latérale qui porte le choix du rôle et commande tout l'écran ; trois écrans
-(formateur, étudiant, relecteur) ; une couche d'appels API unique ; un seul composant de liste
-déroulante, qui annonce toujours son état plutôt que de rester vide ; chargements et erreurs gérés au
-même endroit ; aucun calcul métier dupliqué (F3).
+**Frontend** : un écran d'accueil qui fait choisir son rôle **avant** d'ouvrir une interface, puis une
+barre latérale qui liste les fonctionnalités de ce rôle (`#72`) ; trois écrans (formateur, étudiant,
+relecteur) ; une couche d'appels API unique ; un seul composant de liste déroulante, qui annonce
+toujours son état plutôt que de rester vide ; un seul contrôle de pagination, masqué tant qu'il n'y a
+qu'une page ; chargements et erreurs gérés au même endroit ; aucun calcul métier dupliqué (F3).
 
 **Ce qui ne fonctionne pas / n'est pas livré, et pourquoi :**
 
 - Aucune authentification (Q1, ENF5) : identification par liste, sans vérification serveur.
-- Aucun test automatisé sur le frontend : les trois écrans ont été vérifiés en les construisant
-  (`npm run build`) et en exerçant l'API au `curl`, pas par des tests d'interface.
+- Aucun test automatisé sur le frontend : les écrans ont été vérifiés en les construisant
+  (`npm run build`), en pilotant **Chrome sans interface** sur le parcours réel (accueil → clic sur un
+  rôle → barre latérale → fonctionnalité → retour au choix du rôle), et en exerçant l'API au `curl` à
+  travers le proxy de Vite. Ce n'est pas un test d'interface, c'est une vérification manuelle — la
+  différence compte, et elle est écrite ici plutôt que sous-entendue.
 - L'étape 3 (enveloppe) n'a pas eu lieu : le script ne m'a pas été remis, donc le bug signalé et le
   changement de besoin ne sont pas traités, et l'analyse n'a pas eu à être corrigée en conséquence.
 - L'étape 5 (épreuve Git) n'a pas eu lieu : bundle non remis.
@@ -90,7 +100,7 @@ même endroit ; aucun calcul métier dupliqué (F3).
 ## Avant de téléverser, vérifie
 
 - [x] Le dépôt est **public** et s'ouvre en navigation privée (vérifié : `visibility: PUBLIC`)
-- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`491913c6f9822e332b9f2330269d77c9e3364293`)
+- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`9691d2f44d1d4ae865021c72cc44a990197dcc63`, relevé par `git rev-parse` **et** vérifié par appel à l'API du dépôt)
 - [x] Tout le travail est **poussé** — `git status` propre, `main` = `origin/main`
 - [x] Le `README` a été suivi à la lettre depuis le dépôt (parcours complet rejoué au `curl`)
 - [x] `JOURNAL.md` et le cahier des charges sont dans `docs/`
