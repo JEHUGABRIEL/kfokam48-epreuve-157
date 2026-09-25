@@ -12,4 +12,10 @@ public class RelectureInconnueException extends ApiException {
     public RelectureInconnueException(Long id) {
         super("RELECTURE_INCONNUE", HttpStatus.NOT_FOUND, "Aucune relecture trouvée pour l'identifiant " + id + ".");
     }
+
+    /** Cas de {@code GET /api/relectures/recues} : l'étudiant n'a rien déposé pour cette session. */
+    public RelectureInconnueException() {
+        super("RELECTURE_INCONNUE", HttpStatus.NOT_FOUND,
+                "Aucun exercice déposé par cet étudiant pour cette session, donc aucune relecture à consulter.");
+    }
 }
