@@ -2,9 +2,11 @@ package com.kfokam48.epreuve.relecture.infrastructure.persistence;
 
 import com.kfokam48.epreuve.relecture.domain.RelectureRepository;
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
+import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 /** Adaptateur : implémente le port du domaine au-dessus de Spring Data et du mapper. */
@@ -32,5 +34,12 @@ public class RelectureRepositoryAdapter implements RelectureRepository {
     @Override
     public Optional<Relecture> trouverParExerciceId(Long exerciceId) {
         return jpaRepository.findByExerciceId(exerciceId).map(mapper::versModele);
+    }
+
+    @Override
+    public List<Relecture> listerParRelecteurEtStatut(Long relecteurId, StatutRelecture statut) {
+        return jpaRepository.findByRelecteurIdAndStatut(relecteurId, statut).stream()
+                .map(mapper::versModele)
+                .toList();
     }
 }

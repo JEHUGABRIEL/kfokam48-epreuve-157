@@ -5,6 +5,7 @@ import com.kfokam48.epreuve.exercice.domain.ExerciceRepository;
 import com.kfokam48.epreuve.exercice.domain.model.Exercice;
 import com.kfokam48.epreuve.presence.domain.PresenceRepository;
 import com.kfokam48.epreuve.presence.domain.model.Presence;
+import com.kfokam48.epreuve.relecture.application.dto.RelectureAssigneeResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RelectureResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RendreRelectureRequest;
 import com.kfokam48.epreuve.relecture.domain.AutoRelectureException;
@@ -33,7 +34,8 @@ import java.util.Optional;
  * <p>Appelé par {@code ExerciceService} dans la même transaction que le dépôt : un exercice enregistré
  * sans son tirage serait un exercice que personne ne corrige (RG4).
  *
- * <p>Puis rendre une note et un commentaire sur la relecture assignée : EF6, RG2, RG3, RG12, RG13.
+ * <p>Puis rendre une note et un commentaire sur la relecture assignée : EF6, RG2, RG3, RG12, RG13, et
+ * exposer à l'étudiant relu sa note et son commentaire sans l'identité du relecteur : EF7, RG6.
  * Ici, le module ne dépend que des <em>ports</em> des autres modules (session, exercice) — jamais de
  * leur infrastructure, ce qui tient la règle de dépendance.
  */
@@ -128,5 +130,47 @@ public class RelectureService {
 
         return new RelectureResponse(enregistree.getStatut(), enregistree.getNote(),
                 enregistree.getCommentaire());
+    }
+
+    /**
+     * Ce qu'un relecteur doit encore rendre (UC7).
+     *
+     * <p>Cette lecture n'est pas un confort : le relecteur ne connaît l'identifiant de sa relecture que
+     * par elle. Sans elle, {@code POST /api/relectures/{id}} resterait inatteignable — l'opération
+     * imposée existerait sans que personne puisse l'appeler.
+     */
+    @Transactional(readOnly = true)
+    public List<RelectureAssigneeResponse> listerAssignees(Long relecteurId) {
+        return relectureRepository.listerParRelecteurEtStatut(relecteurId, StatutRelecture.ASSIGNEE).stream()
+                .map(relecture -> {
+                    Exercice exercice = exerciceRepository.trouverParId(relecture.getExerciceId())
+                            .orElseThrow(() -> new ExerciceInconnuException(relecture.getExerciceId()));
+                    return new RelectureAssigneeResponse(
+                            relecture.getId(),
+                            relecture.getExerciceId(),
+                            exercice.getSessionId(),
+                            exercice.getLien(),
+                            relecture.getStatut());
+                })
+                .toList();
+    }
+
+    /**
+     * EF7 / RG6 (Q8) : l'étudiant relu consulte sa note et le commentaire reçu, jamais l'identité de
+     * celui qui l'a relu.
+     *
+     * <p>Le contrat imposé n'offrait aucun moyen de <em>lire</em> une note, seulement d'en écrire une :
+     * EF7 aurait été invérifiable sans cette opération. Tant que le relecteur n'a pas rendu, le statut
+     * vaut {@code ASSIGNEE} et la note est nulle — l'étudiant sait qu'il attend, sans savoir qui.
+     */
+    @Transactional(readOnly = true)
+    public RelectureResponse consulterRecue(Long etudiantId, Long sessionId) {
+        Exercice exercice = exerciceRepository.trouverParSessionEtEtudiant(sessionId, etudiantId)
+                .orElseThrow(RelectureInconnueException::new);
+
+        return relectureRepository.trouverParExerciceId(exercice.getId())
+                .map(relecture -> new RelectureResponse(relecture.getStatut(), relecture.getNote(),
+                        relecture.getCommentaire()))
+                .orElseThrow(RelectureInconnueException::new);
     }
 }

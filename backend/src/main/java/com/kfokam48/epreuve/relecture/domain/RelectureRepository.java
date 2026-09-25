@@ -1,7 +1,9 @@
 package com.kfokam48.epreuve.relecture.domain;
 
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
+import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,4 +18,11 @@ public interface RelectureRepository {
 
     /** RG4 : un exercice n'a qu'un seul relecteur — sert à vérifier l'invariant avant tout rendu. */
     Optional<Relecture> trouverParExerciceId(Long exerciceId);
+
+    /**
+     * Ce qu'un relecteur doit encore rendre (UC7). C'est cette lecture qui rend l'opération imposée
+     * {@code POST /api/relectures/{id}} atteignable : sans elle, le relecteur ignore l'identifiant à
+     * passer en chemin.
+     */
+    List<Relecture> listerParRelecteurEtStatut(Long relecteurId, StatutRelecture statut);
 }
