@@ -1,11 +1,13 @@
 package com.kfokam48.epreuve.relecture.application;
 
+import com.kfokam48.epreuve.exercice.domain.ExerciceRepository;
 import com.kfokam48.epreuve.presence.domain.PresenceRepository;
 import com.kfokam48.epreuve.presence.domain.model.Presence;
 import com.kfokam48.epreuve.presence.domain.model.SourcePresence;
 import com.kfokam48.epreuve.relecture.domain.RelectureRepository;
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
 import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
+import com.kfokam48.epreuve.session.domain.SessionRepository;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +38,8 @@ class RelectureServiceTest {
     private final RelectureRepository relectures = mock(RelectureRepository.class);
     private final PresenceRepository presences = mock(PresenceRepository.class);
     private final TirageAuSort tirage = mock(TirageAuSort.class);
-    private final RelectureService service = new RelectureService(relectures, presences, tirage);
+    private final RelectureService service = new RelectureService(
+            relectures, presences, mock(ExerciceRepository.class), mock(SessionRepository.class), tirage);
 
     @Test
     void lauteur_nest_jamais_dans_les_candidats() {

@@ -1,5 +1,8 @@
 package com.kfokam48.epreuve.relecture.domain.model;
 
+import com.kfokam48.epreuve.relecture.domain.NoteInvalideException;
+import com.kfokam48.epreuve.relecture.domain.RelectureDejaRendueException;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -35,5 +38,28 @@ public class Relecture {
     /** RG12 : une relecture rendue est définitive — c'est cet état qui verrouille le lien (RG10). */
     public boolean estRendue() {
         return statut == StatutRelecture.RENDUE;
+    }
+
+    /**
+     * Rend la note et le commentaire (EF6). Une seule fois, pour toujours.
+     *
+     * <p>Les deux règles du client sont ici, et pas seulement dans le service : RG3 (note entière de 0
+     * à 20, Q9) et RG12 (Q15 : « une fois que le relecteur a validé, c'est fini »). Les placer dans le
+     * modèle, c'est pouvoir les tester sans base ni contexte Spring.
+     *
+     * <p>Le verrou est vérifié avant la note : une relecture déjà rendue le reste, quelle que soit la
+     * note qu'on essaie d'y écrire.
+     */
+    public void rendre(Integer note, String commentaire) {
+        if (estRendue()) {
+            throw new RelectureDejaRendueException();
+        }
+        if (note == null || note < 0 || note > 20) {
+            throw new NoteInvalideException();
+        }
+        this.note = note;
+        this.commentaire = commentaire;
+        this.statut = StatutRelecture.RENDUE;
+        this.renduAt = Instant.now();
     }
 }
