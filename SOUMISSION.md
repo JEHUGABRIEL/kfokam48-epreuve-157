@@ -20,13 +20,13 @@
 | | |
 |---|---|
 | Dépôt (public) | `https://github.com/JEHUGABRIEL/kfokam48-epreuve-157` |
-| Commit final — hash complet, 40 caractères | `57e4a59f5acd42708fa5e1020f590d8af03a6159` |
+| Commit final — hash complet, 40 caractères | `918396ada219018002c2c0e9b323872a19720141` |
 | Branche | `main` |
 
-Ce hash est le commit de merge de la dernière pull request, et il contient l'intégralité du travail :
-les six modules backend, le frontend, l'analyse corrigée, le journal et cette soumission.
-**La seule modification postérieure à ce hash est la mise à jour de ce fichier lui-même** — un fichier
-ne peut pas contenir le hash du commit qui le porte.
+Le hash déclaré est celui du commit de merge qui précède immédiatement l'écriture de ces lignes. Il
+contient l'intégralité du travail : les six modules backend, le frontend, l'analyse corrigée, le journal
+et la version de ce fichier qui décrit l'état exact du livrable. **Le seul changement postérieur est
+l'inscription de ce hash-ci** — un fichier ne peut pas contenir le hash du commit qui le porte.
 
 ## Épreuve Git — étape 5
 
@@ -86,7 +86,7 @@ chargement et d'erreur gérés, aucun calcul métier dupliqué.
 ## Avant de téléverser, vérifie
 
 - [x] Le dépôt est **public** et s'ouvre en navigation privée (vérifié : `visibility: PUBLIC`)
-- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`57e4a59f5acd42708fa5e1020f590d8af03a6159`)
+- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`918396ada219018002c2c0e9b323872a19720141`)
 - [x] Tout le travail est **poussé** — `git status` propre, `main` = `origin/main`
 - [x] Le `README` a été suivi à la lettre depuis le dépôt (parcours complet rejoué au `curl`)
 - [x] `JOURNAL.md` et le cahier des charges sont dans `docs/`
