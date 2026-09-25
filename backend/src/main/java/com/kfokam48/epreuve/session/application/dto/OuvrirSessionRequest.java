@@ -1,0 +1,10 @@
+package com.kfokam48.epreuve.session.application.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record OuvrirSessionRequest(
+        @NotBlank String titre,
+        @NotNull Long promotionId
+) {
+}
