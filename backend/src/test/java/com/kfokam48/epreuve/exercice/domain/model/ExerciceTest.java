@@ -1,6 +1,10 @@
 package com.kfokam48.epreuve.exercice.domain.model;
 
+import com.kfokam48.epreuve.exercice.domain.LienInvalideException;
+
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +42,6 @@ class ExerciceTest {
     @Test
     void le_statut_initial_est_depose() {
         Exercice exercice = new Exercice();
-        org.junit.jupiter.api.Assertions.assertEquals(StatutExercice.DEPOSE, exercice.getStatut());
+        assertEquals(StatutExercice.DEPOSE, exercice.getStatut());
     }
 }
