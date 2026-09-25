@@ -20,13 +20,15 @@
 | | |
 |---|---|
 | Dépôt (public) | `https://github.com/JEHUGABRIEL/kfokam48-epreuve-157` |
-| Commit final — hash complet, 40 caractères | `918396ada219018002c2c0e9b323872a19720141` |
+| Commit final — hash complet, 40 caractères | `491913c6f9822e332b9f2330269d77c9e3364293` |
 | Branche | `main` |
 
 Le hash déclaré est celui du commit de merge qui précède immédiatement l'écriture de ces lignes. Il
-contient l'intégralité du travail : les six modules backend, le frontend, l'analyse corrigée, le journal
-et la version de ce fichier qui décrit l'état exact du livrable. **Le seul changement postérieur est
-l'inscription de ce hash-ci** — un fichier ne peut pas contenir le hash du commit qui le porte.
+contient l'intégralité du travail : les six modules backend, le frontend, l'analyse corrigée, le journal,
+les deux tickets livrés après le premier relevé — le correctif des listes déroulantes et la barre
+latérale — et la version de ce fichier qui décrit l'état exact du livrable. **Aucun changement n'est
+postérieur à l'inscription de ce hash-ci** — un fichier ne peut pas contenir le hash du commit qui le
+porte.
 
 ## Épreuve Git — étape 5
 
@@ -68,8 +70,10 @@ présence par le formateur, marqué `source = FORMATEUR` (RG11, Q14) ; et les li
 (Q1). Le tout est vérifié sur PostgreSQL réel, pas seulement en test : les quinze appels du parcours
 complet rendent exactement les statuts imposés.
 
-**Frontend** : trois écrans (formateur, étudiant, relecteur), une couche d'appels API unique, états de
-chargement et d'erreur gérés, aucun calcul métier dupliqué.
+**Frontend** : une barre latérale qui porte le choix du rôle et commande tout l'écran ; trois écrans
+(formateur, étudiant, relecteur) ; une couche d'appels API unique ; un seul composant de liste
+déroulante, qui annonce toujours son état plutôt que de rester vide ; chargements et erreurs gérés au
+même endroit ; aucun calcul métier dupliqué (F3).
 
 **Ce qui ne fonctionne pas / n'est pas livré, et pourquoi :**
 
@@ -86,7 +90,7 @@ chargement et d'erreur gérés, aucun calcul métier dupliqué.
 ## Avant de téléverser, vérifie
 
 - [x] Le dépôt est **public** et s'ouvre en navigation privée (vérifié : `visibility: PUBLIC`)
-- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`918396ada219018002c2c0e9b323872a19720141`)
+- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`491913c6f9822e332b9f2330269d77c9e3364293`)
 - [x] Tout le travail est **poussé** — `git status` propre, `main` = `origin/main`
 - [x] Le `README` a été suivi à la lettre depuis le dépôt (parcours complet rejoué au `curl`)
 - [x] `JOURNAL.md` et le cahier des charges sont dans `docs/`
