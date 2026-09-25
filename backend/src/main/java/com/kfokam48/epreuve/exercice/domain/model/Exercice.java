@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.exercice.domain.model;
 
+import com.kfokam48.epreuve.exercice.domain.LienInvalideException;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
