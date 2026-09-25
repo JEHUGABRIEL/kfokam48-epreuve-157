@@ -7,9 +7,9 @@ assigné automatiquement parmi les présents ; le formateur consulte un tableau 
 Le cœur du sujet n'est pas l'interface mais les règles métier : code qui expire, pas d'auto-relecture,
 note verrouillée une fois rendue, clôture de session irréversible (cf. `docs/CAHIER_DES_CHARGES.md`).
 
-**Frontend choisi : React (Vite, TypeScript)** — un seul build statique, trois écrans qui partagent la
-même couche d'appels API, et un outillage déjà maîtrisé, donc du temps investi dans le modèle métier
-plutôt que dans la configuration.
+**Frontend choisi : React (Vite, TypeScript)** — un seul build statique, trois écrans précédés d'un
+écran de choix du rôle, qui partagent la même couche d'appels API, et un outillage déjà maîtrisé,
+donc du temps investi dans le modèle métier plutôt que dans la configuration.
 
 ---
 
@@ -68,7 +68,7 @@ curl -X POST http://localhost:8080/api/sessions \
 ### Vérifier l'installation
 
 ```bash
-cd backend && ./mvnw test     # 37 tests, sans Docker ni PostgreSQL (H2 en mémoire)
+cd backend && ./mvnw test     # 47 tests, sans Docker ni PostgreSQL (H2 en mémoire)
 cd frontend && npm run build  # vérification de types + build de production
 ```
 
@@ -117,8 +117,19 @@ Opérations ajoutées, documentées dans le contrat et en §7 du cahier des char
 | `GET /api/relectures/recues` | EF7 / RG6 : le contrat permettait d'écrire une note, pas de la lire |
 | `POST /api/presences/formateur` | RG11 / Q14 : le formateur ajoute une présence à la main (souci de téléphone), marquée `source = FORMATEUR` pour que l'ajout se voie |
 
-Le frontend livre les trois écrans (F2) : formateur (ouvrir, clôturer, tableau), étudiant (présence,
-dépôt, note reçue), relecteur (relectures à rendre). Tous les `fetch` sont dans
+**Pagination** (`#70`) : `page` et `taille` sont acceptés en paramètres **optionnels** sur les quatre
+lectures (`/api/tableau`, `/api/etudiants`, `/api/promotions`, `/api/relectures/assignees`). Un appel
+sans paramètre rend la **collection entière** — c'est le comportement imposé par le contrat, `GET
+/api/tableau` comprise ; le total avant découpage part dans l'en-tête **`X-Total-Count`**, jamais dans
+une enveloppe de réponse, puisque le contrat impose un tableau JSON. Hors bornes (`page < 1`, `taille`
+hors de 1 à 100) : `400 REQUETE_INVALIDE`.
+
+Le frontend (F2) s'ouvre sur un **écran d'accueil qui fait choisir son rôle** — formateur, étudiant
+ou relecteur — puis une **barre latérale qui liste les fonctionnalités de ce rôle**, avec un retour au
+choix du rôle (`#66`, `#72`). Le rôle vit en mémoire de la page : rien n'est écrit dans le stockage du
+navigateur (Q1, ENF5). Les trois écrans ensuite : formateur (ouvrir, clôturer, tableau), étudiant
+(présence, dépôt, note reçue), relecteur (relectures à rendre). Toutes les listes longues sont
+découpées par un contrôle unique, masqué tant qu'il n'y a qu'une page. Tous les `fetch` sont dans
 `frontend/src/api/client.ts` et aucun calcul métier n'est dupliqué côté front : la moyenne affichée
 vient de `GET /api/tableau` (F3).
 
@@ -141,13 +152,16 @@ vient de `GET /api/tableau` (F3).
 | `RelectureTest` | RG3 (note entière de 0 à 20) et RG12 (une relecture rendue ne se modifie plus) |
 | `RelectureServiceTest` | RG2 et RG5 : l'auteur n'est jamais candidat, le relecteur est tiré parmi les présents |
 | `RelectureResponseTest` | RG6 : le DTO de sortie ne peut pas transporter l'identité du relecteur |
-| `TableauServiceTest` | EF9 / ENF2 : quatre requêtes agrégées, moyenne absente plutôt que nulle |
+| `PresenceServiceTest` | EF1 / RG7 / RG8 : les refus de la présence, dont le blocage après cinq échecs |
+| `ReferentielServiceTest` | Q1 : les listes d'identification, découpées par promotion |
+| `TableauServiceTest` | EF9 / ENF2 : requêtes agrégées, moyenne absente plutôt que nulle, et agrégats restreints à la page demandée |
+| `PageDemandeeTest` | `#70` : un appel sans paramètre ne rend **pas** une page de 20 lignes — le contrat imposé que ce test protège |
 | `SessionControllerTest` | l'endpoint imposé, du HTTP jusqu'à la base, format d'erreur compris |
 | `GlobalExceptionHandlerTest` | B4 : `{ code, message }` pour toute erreur, sans fuite technique (ENF3) |
 | `SessionMapperTest`, `SessionRepositoryAdapterTest` | l'aller-retour modèle ↔ entité ne perd aucun champ, et la persistance tient à travers le port |
 
-B6 est couvert au-delà du minimum : les règles métier se testent **sans contexte Spring**, et un test
-part du contrôleur pour aller jusqu'à la base.
+**13 classes, 47 tests.** B6 est couvert au-delà du minimum : les règles métier se testent **sans
+contexte Spring**, et un test part du contrôleur pour aller jusqu'à la base.
 
 ---
 
