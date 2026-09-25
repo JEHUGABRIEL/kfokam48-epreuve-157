@@ -1,0 +1,30 @@
+# PostgreSQL de développement — épreuve finale KFOKAM48.
+#
+#   docker compose up -d        # démarre la base
+#   docker compose down         # l'arrête (les données restent)
+#   docker compose down -v      # l'arrête ET efface les données
+#
+# Le port hôte 5433 évite le conflit avec un PostgreSQL déjà installé sur 5432.
+# Pour changer ce port : DB_PORT=5432 docker compose up -d
+# (penser alors à surcharger DB_URL pour l'application).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: epreuve-postgres
+    environment:
+      POSTGRES_DB: epreuve
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - epreuve-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d epreuve"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  epreuve-pgdata:
