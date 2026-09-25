@@ -84,17 +84,51 @@ soumission.
   serveur), l'API échoue avec `BindException`. `SERVER_PORT` et `VITE_API_TARGET` permettent de
   démarrer sans modifier le code.
 
-## Reste à faire (assumé)
-
-- Épreuve Git (étape 5) : `git-lab.bundle` n'a pas été remis au candidat ; le second dépôt
-  `kfokam48-gitlab-157` n'a donc pas de contenu à recevoir.
-- Étape 3 (enveloppe) : le script `enveloppe` n'a pas été remis non plus ; le bug signalé et le
-  changement de besoin ne sont donc pas traités.
-
 ## Livré en fin de parcours
 
-- **Ajout manuel d'une présence par le formateur** (`RG11`, `Q14`, ticket `#11`) :
+Tout ce qui suit est arrivé sur `main` **après** le jalon `[JALON] v1.0`, dans l'ordre ci-dessous.
+
+- **Ajout manuel d'une présence par le formateur** (`RG11`, `Q14`, ticket `#11`, PR `#57`) :
   `POST /api/presences/formateur`, ajouté au contrat **après son gel** et documenté en §7 du cahier
   des charges. C'est la seule entorse assumée au principe « contrat figé avant la première ligne de
   code » : le champ `source` (`ETUDIANT` / `FORMATEUR`) existait depuis `V1` sans qu'aucune opération
   ne le renseigne, et RG11 était la dernière règle de gestion sans code pour l'exprimer.
+- **Correctif — une liste déroulante vide ne dit pas pourquoi elle l'est** (`#64`, PR `#65`) :
+  un champ dont le référentiel n'avait pas pu être chargé ne montrait rien — ni ligne, ni raison, ni
+  recours — et l'erreur posée en tête de page était loin du champ qui l'avait provoquée. Le
+  chargement remonte dans un hook unique, un seul composant porte le `<select>` et **annonce son
+  état** (chargement, liste indisponible, choix à faire), avec un bouton « Réessayer ». Au passage,
+  plus aucun nom n'est pré-sélectionné : le premier étudiant de la liste n'est pas forcément
+  l'utilisateur devant l'écran.
+- **Le rôle commande l'écran depuis une barre latérale** (`#66`, PR `#67`) : le rôle se choisissait
+  dans une rangée d'onglets, donc se lisait comme un filtre et non comme la navigation. Il passe en
+  barre latérale, chaque entrée annonçant ce qu'elle permet de faire et l'entrée active portant
+  `aria-current="page"`. Deux colonnes sur écran large, empilées sous 48 rem (ENF1). Le ticket
+  `#72` remplacera cette barre par celle des fonctionnalités.
+- **Pagination des lectures** (`#70`, PR `#71`) : `page` et `taille` en paramètres **optionnels** sur
+  `GET /api/tableau`, `/api/etudiants`, `/api/promotions` et `/api/relectures/assignees`. Un appel
+  sans paramètre rend la collection entière — c'est le contrat imposé, `GET /api/tableau` comprise —
+  et le total part dans l'en-tête `X-Total-Count`, la réponse restant un tableau JSON. Hors bornes,
+  `400 REQUETE_INVALIDE`, un code qui existait déjà : aucun code de statut nouveau. Les agrégats du
+  tableau ne portent que sur la page demandée. Décision écrite en §7, contrat mis à jour dans le même
+  ticket.
+- **Choix du rôle à l'entrée, puis navigation par fonctionnalité** (`#72`, PR `#73`) : l'application
+  s'ouvrait sur l'écran formateur, donc on voyait le tableau d'une promotion avant d'avoir dit qui on
+  était. Un écran d'accueil « Qui êtes-vous ? » présente les trois rôles et leurs fonctionnalités ;
+  la barre latérale liste ensuite les fonctionnalités du rôle, avec un retour au choix du rôle. Le
+  catalogue des rôles est une source unique, partagée par l'accueil et la barre latérale, pour que les
+  deux ne puissent pas se contredire.
+- **Remises à jour du dossier** (`#36`, `#51`, `#53`, `#55`, `#58`, `#60`, `#62`, `#68`, `#74`) :
+  README, cahier des charges, journal de bord, et relevé du hash de soumission. Ces tickets ne
+  changent pas l'application, ils la décrivent — et deux d'entre eux (`#51`, `#74`) ont été ouverts
+  parce qu'un document affirmait quelque chose que le code livré démentait.
+
+## Ce qui n'a pas eu lieu, et pourquoi (assumé)
+
+Ces deux points ne peuvent pas être rattrapés : les deux éléments à remettre ne l'ont jamais été.
+
+- **Étape 3 — enveloppe** : le script `enveloppe` n'a pas été remis. Le bug signalé et le changement
+  de besoin ne sont donc pas traités, et l'analyse n'a pas eu à être corrigée après coup — c'est
+  précisément ce que l'étape 3 devait provoquer.
+- **Étape 5 — épreuve Git** : `git-lab.bundle` n'a pas été remis non plus, donc le second dépôt
+  `kfokam48-gitlab-157` n'a pas de contenu à recevoir.

@@ -19,7 +19,7 @@ d'auto-relecture, note verrouillée une fois rendue, clôture de session irréve
 ```bash
 docker compose up -d                      # racine : PostgreSQL 16 (port hôte 5433)
 cd backend && ./mvnw spring-boot:run      # API sur :8080, migrations Flyway au démarrage
-cd backend && ./mvnw test                 # 37 tests, sans Docker ni PostgreSQL (H2 en mémoire)
+cd backend && ./mvnw test                 # 47 tests, sans Docker ni PostgreSQL (H2 en mémoire)
 ```
 
 ```bash
@@ -32,50 +32,50 @@ cd frontend && npm run build                # vérification de types + build de 
 Les jalons Git sont : `[JALON] depart` → `[JALON] analyse` → `[JALON] v0.1` → `[JALON] v1.0`.
 **Les quatre sont poussés et dans l'ordre**, `[JALON] analyse` avant le premier commit de code.
 
-**Situation Git au 2026-09-25.** `main` est à jour et saine. Le travail d'outillage et de
-documentation est passé par des branches de ticket : une issue, une branche, une PR, un merge
-commit, puis la branche supprimée.
+**Situation Git au 2026-09-25.** `main` est à jour et saine, les quatre jalons sont poussés, et
+**les 36 issues du backlog sont fermées**. Le travail passe par des branches de ticket : une issue, une
+branche, une PR vers `main` fermée par `Closes #<n°>`, un merge commit, puis la branche supprimée. Les
+derniers tickets de la journée donnent la mesure du rythme :
 
 | Ticket | Branche | PR | Contenu |
 |---|---|---|---|
-| `#17` | `chore/17-convention-git` | `#21` | `AGENTS.md`, convention Git (cahier des charges §10), `creer-issues.sh`, `.gitignore` (`.agents/`) |
-| `#19` | `chore/19-journal-etapes-1-2` | `#22` | `docs/JOURNAL.md` (étapes 1 et 2) |
-| `#20` | `chore/20-corrections-analyse-contrat` | `#23` | statut `429` au contrat, section 7 complétée, révisions `1.2` |
-| `#18` | `chore/18-contexte-projet` | *(cette PR)* | ce fichier |
+| `#64` | `fix/64-listes-deroulantes` | `#65` | une liste déroulante annonce son état au lieu de rester vide |
+| `#66` | `feat/66-barre-laterale-roles` | `#67` | barre latérale qui porte le choix du rôle |
+| `#70` | `feat/70-pagination` | `#71` | `page` / `taille` optionnels sur les quatre lectures |
+| `#72` | `feat/72-choix-role-accueil` | `#73` | accueil de choix du rôle, puis barre latérale des fonctionnalités |
+| `#74` | `chore/74-relecture-documents` | *(cette PR)* | relecture des documents contre `main` |
 
-Deux dettes d'historique subsistent, **antérieures à cette régularisation** et non réparables sans
+Deux dettes d'historique subsistent, **antérieures à la régularisation des conventions** et non réparables sans
 réécrire `main` (interdit) : la PR `#16` (base de données) a été fermée sans merge alors que ses
 commits sont bien dans `main`, et l'issue `#14` est fermée sans PR qui la référence. Pour ces deux
 tickets, le découpage n'est donc pas lisible dans l'historique. Note utile : le numéro `#15` est
 celui de la PR du socle Maven, pas une issue — issues et PR partagent la numérotation GitHub.
 
-**Toujours non commité : tout le code Java** (`backend/src/main/java/`, `backend/src/test/java/`),
-`session/` compris, ainsi que `frontend/` (vide). Voir « Ce qui manque encore » : le prochain
-travail Git consiste à ouvrir une branche par ticket fonctionnel et à y déposer ce code.
-
 | Chemin | Contenu |
 |---|---|
 | `AGENTS.md` | **Instructions de travail pour l'agent** : ce qui est noté, convention Git obligatoire, rappels coûteux, pièges d'environnement. À lire avant d'agir |
 | `docs/CAHIER_DES_CHARGES.md` | **Document de référence** : acteurs, périmètre, EF/ENF, règles de gestion RG1–RG14, hypothèses et contradictions |
-| `docs/JOURNAL.md` | Journal de bord, **une entrée par étape** (étapes 1 et 2 rédigées, 3 à 6 vides). Format imposé : Fait / Bloqué / IA + « comment j'ai vérifié » |
-| `docs/diagrammes/D1-cas-utilisation.puml` | Cas d'utilisation (PlantUML) |
-| `docs/diagrammes/D2-modele-donnees.mmd` | Modèle de données (Mermaid) — source de vérité des entités |
-| `docs/diagrammes/D3-sequence-presence.mmd` | Séquence de marquage de présence, chemins d'erreur inclus |
+| `docs/JOURNAL.md` | Journal de bord, **une entrée par étape**. Étapes 1, 2 et 4 rédigées ; 3 et 5 écrites comme **non déroulées** (scripts non remis) ; 6 reste à écrire au téléversement. Format : Fait / Bloqué / IA + « comment j'ai vérifié » |
+| `docs/diagrammes/D1-cas-utilisation.md` | Cas d'utilisation (Mermaid) |
+| `docs/diagrammes/D2-modele-donnees.md` | Modèle de données (Mermaid) — source de vérité des entités |
+| `docs/diagrammes/D3-sequence-presence.md` | Séquence de marquage de présence, chemins d'erreur inclus |
+| `docs/diagrammes/D4-etats-transitions-exercice.md` | Cycle de vie d'un exercice (bonus) |
+| `SOUMISSION.md` | Dossier de soumission : candidat, dépôts, hash, checklist de téléversement |
 | `api/contrat.yaml` | Contrat OpenAPI 3.0.3 — **imposé** pour 5 opérations, extensible pour le reste |
-| `creer-issues.sh` | Script `gh` de création des labels et des 14 issues du backlog (9 Must, 3 Should, 2 Could) |
+| `creer-issues.sh` | Script `gh` de création des labels et des **14 issues initiales** du backlog (9 Must, 3 Should, 2 Could) ; la suite du backlog a été ouverte ticket par ticket |
 | `compose.yaml` | PostgreSQL 16 de développement (base `epreuve`, port hôte 5433) |
 | `backend/` | Maven Spring Boot 4.1.1. Packages sous `src/main/java/com/kfokam48/epreuve/` : `common/`, `session/`, `presence/`, `exercice/`, `relecture/`, `tableau/` |
-| `frontend/` | React 18 + Vite + TypeScript. `src/api/client.ts` est le **seul** module qui appelle l'API (F3) ; `src/ecrans/` porte les trois écrans (formateur, étudiant, relecteur) |
+| `frontend/` | React 18 + Vite + TypeScript. `src/api/client.ts` est le **seul** module qui appelle l'API (F3) ; `src/ecrans/` porte l'écran d'accueil de choix du rôle et les trois écrans ; `src/ui/` porte la barre latérale, les listes déroulantes, la pagination et le catalogue des rôles |
 
 **Tous les modules sont implémentés** : `common/referentiel/`, `session/`, `presence/`, `exercice/`,
-`relecture/` et `tableau/`, chacun en `domain/` (modèle pur + port) → `application/` (cas d'usage +
-DTO) → `infrastructure/` (contrôleur + persistance). `./mvnw test` passe en entier, contexte Spring
-compris : **37 tests, 0 échec**. Les cinq opérations imposées du contrat sont livrées, plus six
-ajoutées (clôture de session, remplacement du lien, listes d'identification, lectures de relecture).
+`relecture/` et `tableau/`, plus le transverse `common/error/` et `common/pagination/`. Chacun en
+`domain/` (modèle pur + port) → `application/` (cas d'usage + DTO) → `infrastructure/` (contrôleur +
+persistance). `./mvnw test` passe en entier, contexte Spring compris : **47 tests, 0 échec**, dans
+13 classes. Les cinq opérations imposées du contrat sont livrées, plus six ajoutées (clôture de
+session, remplacement du lien, listes d'identification, lectures de relecture, ajout manuel d'une
+présence).
 
-**Tout le code Java est encore non commité** : `git status` montre `?? backend/src/main/java/` et
-`?? backend/src/test/java/` en bloc — `session/` compris. Ne pas conclure que `session/` est
-déjà dans Git ; `git diff` ne montre rien pour ces fichiers, c'est normal.
+**Tout est commité et poussé** : `git status` est propre sur `main`, et `main` = `origin/main`.
 
 ## Stack et commandes
 
@@ -96,9 +96,8 @@ cd backend
 ./mvnw dependency:tree            # vérifier une dépendance transitive
 ```
 
-`./mvnw test` **échoue aujourd'hui** (2 erreurs sur 4, reproduit le 2026-09-25) :
-`SessionControllerTest` ne charge pas le contexte Spring — cf. « Ce qui manque encore ».
-`SessionTest` (règle métier pure) passe.
+Rien à signaler : `./mvnw test` passe en entier (47 tests), sur H2 et **sans Docker** — un correcteur
+peut donc valider le projet sur un poste vierge.
 
 Il n'y a **pas encore de linter ni de formateur** configuré côté backend (pas de checkstyle, pas de
 spotless). Ne pas en inventer un sans le commiter.
@@ -107,8 +106,12 @@ Dépendances déclarées : `spring-boot-starter-webmvc`, `-data-jpa`, `-validati
 `flyway-database-postgresql`, `postgresql` (runtime), `lombok` (optionnel), `h2` (test),
 `-test`, `-webmvc-test` (test).
 
-**Frontend** — React + Vite + TypeScript, trois écrans (formateur, étudiant, relecteur). Rien n'est
-installé par `npm install` ; les commandes sont :
+**Frontend** — React 18 + Vite 5 + TypeScript. Un écran d'accueil qui fait choisir le rôle, une barre
+latérale qui liste les fonctionnalités du rôle choisi, et trois écrans (formateur, étudiant, relecteur).
+Chaque liste de plus d'une page est découpée par un contrôle unique (`src/ui/Pagination.tsx`). Pas de
+routeur, pas de gestionnaire d'état : le rôle et la fonctionnalité affichée sont deux `useState` dans
+`App.tsx`, et un rechargement ramène à l'accueil (ENF5 : rien dans le stockage du navigateur). Les
+commandes sont :
 
 ```bash
 cd frontend
@@ -122,14 +125,16 @@ npm run build
 - **Backend en clean architecture par module**, code transverse dans `common/`. Un modèle de domaine
   pur, un port de persistance, puis en infrastructure l'adaptateur, l'entité JPA et le mapper. Pas de
   sur-découpage pour autant : pas d'interface par cas d'usage, pas de port/in-port/out.
-- **Front** : couche d'appel API dédiée, écrans formateur / étudiant / relecteur.
+- **Front** : couche d'appel API dédiée (`src/api/client.ts`, seul module qui appelle l'API), écran
+d'accueil de choix du rôle, barre latérale de fonctionnalités, écrans formateur / étudiant / relecteur.
 - **Modèle de données** (cf. D2) : `Promotion`, `Etudiant`, `Session`, `Presence`, `Exercice`,
   `Relecture`. Il n'existe **pas** d'entité `Relecteur` : c'est un `Etudiant` référencé par
   `Relecture.relecteurId`.
 
 ### Module de référence : `session/`
 
-`session/` est le seul module implémenté et sert de gabarit à répliquer.
+`session/` est le **gabarit** : les six autres modules suivent la même découpe, au point qu'un nouveau
+module se rédige en copiant ses fichiers.
 
 - **`domain/model/`** : le modèle métier, **sans aucune annotation ni dépendance de persistance**
   (`Session`, `StatutSession`). Lombok pour l'accès aux champs, règles métier en méthodes
@@ -210,21 +215,20 @@ Les deux migrations ont été exécutées contre un PostgreSQL 16.13 réel et Hi
 mapping dessus. En cas de modification d'une migration déjà appliquée, Flyway refusera le checksum :
 `docker compose down -v` puis relance.
 
-### Ce qui manque encore
+### Ce qui manque encore, ou n'a jamais eu lieu
 
-- **Le contexte Spring ne démarre pas.** `PresenceRepository`, `ExerciceRepository` et
-  `RelectureRepository` étendent `JpaRepository` sur des classes encore vides et non annotées
-  `@Entity`. Le premier bean en échec est `relectureRepository` :
-  `Not a managed type: class ...relecture.domain.Relecture`. **Résolu** à l'étape 2 : les quatre
-  modules sont désormais de vraies entités derrière leurs ports, et le contexte démarre.
-- **Reste non livré, et assumé** : l'ajout manuel d'une présence par le formateur (RG11, Q14,
-  ticket `#11`, priorité *Should*) — la colonne `source` et l'énumération `ETUDIANT`/`FORMATEUR`
-  existent depuis `V1`, mais l'opération n'a pas d'endpoint.
-- Livrables écrits : `README.md` (parcours complet pour les trois rôles), `CHANGELOG.md` (aligné sur
-  l'historique Git) et `SOUMISSION.md` (dépôt, hash du commit final, commandes). `docs/JOURNAL.md`
-  couvre les étapes 1 et 2 ; l'étape 3 n'a pas eu lieu, l'enveloppe n'ayant pas été remise.
-- `AGENTS.md` est désormais écrit (il a remplacé le gabarit vide) et fait autorité avec ce fichier.
-  `.agents/` ne contient que des types TypeScript de l'outil et est ignoré par Git.
+- **Les deux étapes à livrable remis** : l'étape 3 (`enveloppe`) et l'étape 5 (`git-lab.bundle`) n'ont
+  pas pu être traitées, aucun des deux scripts ne m'ayant été remis. Conséquence directe : le bug
+  signalé et le changement de besoin ne sont pas traités, l'analyse n'a pas eu à être corrigée en
+  conséquence, et le dépôt `kfokam48-gitlab-157` n'a jamais été créé. C'est écrit dans
+  `docs/JOURNAL.md` (entrées des étapes 3 et 5) plutôt que passé sous silence.
+- **Aucun test automatisé sur le frontend** : les écrans ont été vérifiés en les construisant
+  (`npm run build`), en pilotant Chrome sans interface sur le parcours réel, et au `curl` sur l'API.
+  C'est une faiblesse reconnue, pas une omission cachée.
+- **Aucune authentification** : voir « Pièges et points non évidents ». Ni jeton, ni route réservée,
+  ni contrôle côté serveur — l'usurpation reste possible et assumée (ENF5).
+- `AGENTS.md` et ce fichier font autorité et se relisent avant toute tâche. `.agents/` ne contient que
+  des types TypeScript de l'outil et est ignoré par Git.
 
 ## Contraintes imposées par le sujet (B1–B6, F1–F3)
 
@@ -277,9 +281,18 @@ associé (en mémoire applicative, indexé par `etudiantId` seul). Les trois sta
   autorisait une correction avant clôture. Même le formateur ne peut pas la modifier.
 - **Unicité `(sessionId, etudiantId)` sur `Presence`** doit être garantie au niveau base (ENF4), pas
   seulement dans le service : deux étudiants marquent présence au même instant.
-- **Pas d'authentification réelle** (ENF5, hors périmètre) : `etudiantId` transite côté client
-  (localStorage) sans vérification serveur ; la route `/formateur` n'est protégée que par un code
-  statique côté front. L'usurpation est un risque assumé — ne pas le présenter comme corrigé.
+- **Pas d'authentification réelle** (ENF5, hors périmètre) : l'`etudiantId` est transmis par le client
+  dans les requêtes qui le demandent, sans vérification serveur, et le rôle se choisit sur l'écran
+  d'accueil sans rien prouver. Il n'y a ni jeton, ni route réservée côté front, et **rien n'est écrit
+  dans le stockage du navigateur** : une promotion ou un nom ne survit pas à un rechargement.
+  L'usurpation est un risque assumé — ne pas le présenter comme corrigé.
+- **Pagination optionnelle, jamais par défaut** (ticket `#70`) : `page` et `taille` sur les quatre
+  lectures, mais un appel qui ne les demande pas rend la **collection entière** — c'est la contrainte
+  qui tient tout le reste. `GET /api/tableau` est une opération imposée dont la réponse est un tableau
+  JSON : donc pas d'enveloppe `{elements, total}`, le total part dans l'en-tête `X-Total-Count`.
+  `PageDemandee.depuis(null, null)` rend `Optional.empty()` ; ne jamais compléter un défaut pour un
+  appel qui n'a rien demandé. Hors bornes (`page < 1`, `taille` hors de 1 à 100) : `400
+  REQUETE_INVALIDE`, aucun code de statut nouveau.
 - **L'identité du relecteur ne doit jamais sortir de l'API** (RG6) : ni `relecteurId`, ni nom, dans
   la réponse à l'étudiant relu.
 - **Blocage anti-brute-force** (RG8) : 5 échecs de code par étudiant ⇒ 2 minutes de blocage.
@@ -295,7 +308,7 @@ associé (en mémoire applicative, indexé par `etudiantId` seul). Les trois sta
 
 - Livrables attendus : README d'installation testé depuis un clone vierge, `CHANGELOG.md` cohérent
   avec l'historique Git, `JOURNAL.md` mis à jour à chaque étape.
-- **Trois commits `[JALON]`** dans l'ordre : `analyse` (fait), `v0.1`, `v1.0`.
+- **Quatre commits `[JALON]`**, tous poussés et dans l'ordre : `depart`, `analyse`, `v0.1`, `v1.0`.
 - **Une branche par ticket, jamais de branche fourre-tout** : `feat/<n°issue>-<slug>` (ou
   `fix/<n°issue>-<slug>`), créée depuis `main` à jour. Une PR par branche, vers `main`, liée à
   l'issue par `Closes #<n°>`. Branche supprimée après merge, puis `main` remis à jour. Un ticket =

@@ -14,7 +14,7 @@ Chaque entrée répond aux trois mêmes questions :
 
 ## Étape 1 — Analyse et conception
 
-**Fait :** cahier des charges complet, dix sections, avec 9 exigences fonctionnelles (`EF1`–`EF9`), 5 exigences non fonctionnelles (`ENF1`–`ENF5`) et 14 règles de gestion (`RG1`–`RG14`), chacune sourcée sur une question `Qx` ou sur une hypothèse de la section 7. Trois diagrammes versionnés en texte : `D1-cas-utilisation.puml`, `D2-modele-donnees.mmd`, `D3-sequence-presence.mmd` (avec le cas nominal **et** les deux chemins d'erreur code expiré / déjà présent, alignés sur les codes HTTP du contrat). Backlog de 14 issues créées par script `gh` (9 Must, 3 Should, 2 Could), chacune avec un critère d'acceptation vérifiable et le renvoi à ses `EFx`/`RGx`. Contrat d'API complété : les 5 opérations imposées, plus 6 ajoutées. Commit `[JALON] analyse` poussé **avant** la moindre ligne de code.
+**Fait :** cahier des charges complet, dix sections, avec 9 exigences fonctionnelles (`EF1`–`EF9`), 5 exigences non fonctionnelles (`ENF1`–`ENF5`) et 14 règles de gestion (`RG1`–`RG14`), chacune sourcée sur une question `Qx` ou sur une hypothèse de la section 7. Trois diagrammes versionnés en texte : `D1-cas-utilisation.puml`, `D2-modele-donnees.mmd`, `D3-sequence-presence.mmd` (avec le cas nominal **et** les deux chemins d'erreur code expiré / déjà présent, alignés sur les codes HTTP du contrat) — renommés en `.md` à l'étape 4 ; les noms d'origine restent ici parce que c'est ce qui a été produit ce jour-là. Backlog de 14 issues créées par script `gh` (9 Must, 3 Should, 2 Could), chacune avec un critère d'acceptation vérifiable et le renvoi à ses `EFx`/`RGx`. Contrat d'API complété : les 5 opérations imposées, plus 6 ajoutées. Commit `[JALON] analyse` poussé **avant** la moindre ligne de code.
 
 **Bloqué :** ~40 min sur la section 7. Deux difficultés distinctes. D'abord la contradiction `Q10` / `Q15` : deux réponses à la même question, l'une permissive, l'autre définitive. Ensuite, une fois la section 7 écrite, sa relecture contre `CLIENT.md` a montré qu'elle laissait passer deux décisions non écrites (voir la ligne IA). J'ai aussi perdu du temps à vouloir modéliser « une relecture commencée » avant de constater qu'aucun état ne le permet dans D2.
 
@@ -62,13 +62,13 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 3 — Enveloppe
 
-**Fait :**
+**Fait :** rien, et ce n'est pas un oubli de ma part : le script `enveloppe` ne m'a jamais été remis. Le jalon `[JALON] v0.1` était pourtant poussé, le dépôt prêt à la recevoir. Le bug signalé et le changement de besoin ne sont donc ni reproduits, ni corrigés, ni arbitrés, et aucune branche `fix/…` ni évolution n'a été ouverte pour eux. Ce que ce manque m'a coûté est plus large qu'un correctif : c'est l'étape qui devait rendre une partie de mon analyse fausse, et cette confrontation n'a pas eu lieu.
 
-**Bloqué :**
+**Bloqué :** l'étape entière. Un correctif sans énoncé n'est pas un correctif, c'est une invention : sans reproduction, il n'y a pas de « avant », donc rien à vérifier après. Je n'ai pas voulu fabriquer un bug plausible pour cocher la case — c'eût été un faux travail, et le sujet note la démarche avant le produit.
 
-**IA :**
+**IA :** rien pour cette étape. Je ne lui ai fait ni décrire un bug, ni inventer un changement de besoin : les deux auraient produit un livrable d'apparence complète, exactement ce que le barème sanctionne.
 
-**Ce que j'ai sorti du périmètre pour absorber le changement, et pourquoi :**
+**Ce que j'ai sorti du périmètre pour absorber le changement, et pourquoi :** je n'ai rien sorti, faute d'énoncé. L'ordre de sacrifice était fixé d'avance — les tickets Should/Could et le bonus diagramme d'abord, **jamais** la conformité au contrat d'API ni la clôture de session. Cet ordre n'a pas eu à servir : les tickets Must étaient livrés avant `[JALON] v0.1`. Les Should/Could l'ont tous été aussi, plus tard dans la journée.
 
 ---
 
@@ -95,11 +95,11 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 5 — Épreuve Git
 
-**Fait :**
+**Fait :** rien : `git-lab.bundle` ne m'a pas été remis, comme l'`enveloppe` de l'étape 3. Le dépôt `kfokam48-gitlab-157` n'a donc jamais été créé, et aucun exercice Git de l'épreuve n'a été exécuté.
 
-**Bloqué :**
+**Bloqué :** l'étape entière, et les 17 points qui vont avec — c'est le plus gros poste perdu de la journée. Mes 12 points de discipline Git (une branche par ticket, une PR par branche, `Closes #<n°>`, branche supprimée, `main` remis à jour avant d'ouvrir la suivante) restent dans l'historique de mon propre dépôt, mais ils ne remplacent pas l'épreuve qui les notait sur le dépôt remis.
 
-**IA :**
+**IA :** rien : faire produire des commandes Git sans dépôt à interroger n'aurait rien vérifié du tout — et c'est justement le genre de livrable qui a l'air juste parce qu'il est bien écrit.
 
 ---
 
