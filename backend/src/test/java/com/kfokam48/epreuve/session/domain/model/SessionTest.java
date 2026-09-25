@@ -1,4 +1,4 @@
-package com.kfokam48.epreuve.session.domain;
+package com.kfokam48.epreuve.session.domain.model;
 
 import org.junit.jupiter.api.Test;
 
@@ -6,6 +6,10 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Règles métier du domaine, testées seules : ni base de données, ni contexte Spring. C'est
+ * exactement ce que permet la séparation entre le modèle et l'entité de stockage.
+ */
 class SessionTest {
 
     // Vérifie RG1 : le code expire 15 minutes après l'ouverture, pas avant, pas après.
