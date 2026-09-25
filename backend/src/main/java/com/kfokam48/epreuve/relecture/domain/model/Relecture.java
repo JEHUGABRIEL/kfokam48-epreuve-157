@@ -12,7 +12,8 @@ import java.time.Instant;
 /**
  * Relecture attribuée à un étudiant pour un exercice donné (cf. D2).
  * <ul>
- *   <li>RG4 : un exercice n'a qu'un seul relecteur.</li>
+ *   <li>RG4, <strong>révisée à l'étape 3</strong> : un exercice est relu par deux pairs distincts, et
+ *       la note retenue est la moyenne des deux — cf. {@link NoteRetenue}.</li>
  *   <li>RG6 : l'identité du relecteur ne sort jamais de l'API.</li>
  * </ul>
  *
@@ -25,6 +26,13 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 public class Relecture {
+
+    /**
+     * RG4 révisée : le nombre de pairs attendus sur un exercice. Une constante, et une seule, parce
+     * que cette valeur décide à la fois du nombre de relectures assignées et du moment où la note
+     * retenue cesse d'être provisoire : deux endroits, mais une seule vérité.
+     */
+    public static final int PAIRS_ATTENDUS = 2;
 
     private Long id;
     private Long exerciceId;

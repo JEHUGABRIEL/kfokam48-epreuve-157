@@ -19,8 +19,12 @@ public interface RelectureRepository {
 
     Optional<Relecture> trouverParId(Long id);
 
-    /** RG4 : un exercice n'a qu'un seul relecteur — sert à vérifier l'invariant avant tout rendu. */
-    Optional<Relecture> trouverParExerciceId(Long exerciceId);
+    /**
+     * RG4 révisée (étape 3) : un exercice est relu par deux pairs distincts, donc il porte désormais
+     * <strong>jusqu'à deux</strong> relectures. Cette lecture sert à l'état de l'exercice (D4), au
+     * calcul de la note retenue, et à la fermeture du remplacement de lien (RG10).
+     */
+    List<Relecture> trouverParExerciceId(Long exerciceId);
 
     /**
      * Ce qu'un relecteur doit encore rendre (UC7). C'est cette lecture qui rend l'opération imposée
@@ -36,8 +40,12 @@ public interface RelectureRepository {
     long compterParRelecteurEtStatut(Long relecteurId, StatutRelecture statut);
 
     /**
-     * EF9 / RG14 : la moyenne des notes reçues, par auteur de l'exercice relu. Absent de la carte =
-     * aucune note reçue (et non une moyenne de zéro).
+     * EF9 / RG14 : la moyenne des notes <strong>retenues</strong>, par auteur de l'exercice relu.
+     * Absent de la carte = aucune note reçue (et non une moyenne de zéro).
+     *
+     * <p>Depuis l'étape 3, la moyenne porte sur les notes retenues, donc sur une moyenne par exercice :
+     * additionner toutes les notes donnerait deux fois plus de poids à un exercice relu par deux pairs
+     * qu'à un exercice relu par un seul.
      *
      * <p>Une seule requête agrégée pour toute la promotion : c'est ce qui tient ENF2.
      */

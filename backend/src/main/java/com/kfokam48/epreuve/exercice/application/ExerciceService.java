@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Optional;
 
 /**
  * Cas d'usage du module exercice : déposer le lien d'un exercice (EF3, RG9, RG13), le remplacer
@@ -86,9 +85,10 @@ public class ExerciceService {
 
         Exercice enregistre = exerciceRepository.enregistrer(exercice);
 
-        // EF5 / RG5 : le tirage a lieu dans la transaction du dépôt — un exercice enregistré sans son
-        // relecteur serait un exercice que personne ne corrige (RG4). Si aucun présent n'est éligible,
-        // l'exercice reste DEPOSE et le formateur le voit dans son tableau (Q11, §7).
+        // EF5 / RG5 : le tirage a lieu dans la transaction du dépôt — un exercice enregistré sans ses
+        // relecteurs serait un exercice que personne ne corrige (RG4, révisée à l'étape 3 : deux
+        // pairs, donc deux relectures). Si aucun présent n'est éligible, l'exercice reste DEPOSE et le
+        // formateur le voit dans son tableau (Q11, §7).
         boolean relecteurAssigne = relectureService.assigner(
                 enregistre.getId(), enregistre.getSessionId(), enregistre.getEtudiantId()).isPresent();
         if (relecteurAssigne) {
@@ -120,9 +120,14 @@ public class ExerciceService {
             throw new SessionDejaClotureeException(session.getId());
         }
 
-        // RG10 : une fois la relecture rendue, le travail relu ne change plus sous les pieds du relecteur.
-        Optional<Relecture> relecture = relectureRepository.trouverParExerciceId(exerciceId);
-        if (relecture.isPresent() && relecture.get().estRendue()) {
+        // RG10 : dès **une** relecture rendue, le travail relu ne change plus sous les pieds de celui
+        // qui l'a noté. Depuis l'étape 3, un exercice porte jusqu'à deux relectures : exiger que les
+        // deux soient rendues aurait rouvert la fenêtre à un moment où une note existe déjà —
+        // exactement ce que Q13 voulait empêcher (§7 : la fenêtre du lien et l'état de l'exercice
+        // répondent à deux questions différentes).
+        boolean dejaNotee = relectureRepository.trouverParExerciceId(exerciceId).stream()
+                .anyMatch(Relecture::estRendue);
+        if (dejaNotee) {
             throw new RelectureDejaRendueException();
         }
 

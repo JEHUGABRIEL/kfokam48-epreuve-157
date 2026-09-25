@@ -3,6 +3,7 @@ package com.kfokam48.epreuve.relecture.infrastructure;
 import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.pagination.infrastructure.ReponsePaginee;
 import com.kfokam48.epreuve.relecture.application.RelectureService;
+import com.kfokam48.epreuve.relecture.application.dto.NoteRecueResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RelectureAssigneeResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RelectureResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RendreRelectureRequest;
@@ -59,9 +60,11 @@ public class RelectureController {
                 relectureService.listerAssignees(relecteurId, PageDemandee.depuis(page, taille)));
     }
 
-    // EF7 / RG6 — l'étudiant relu consulte sa note, sans jamais savoir qui l'a relu.
+    // EF7 / RG6 — l'étudiant relu consulte la note retenue de son exercice, sans jamais savoir qui l'a
+    // relu. Le DTO est distinct de celui du rendu : celui-ci porte une moyenne, et son caractère
+    // provisoire, quand l'opération imposée ci-dessus porte la note entière d'un seul relecteur.
     @GetMapping("/recues")
-    public ResponseEntity<RelectureResponse> recues(@RequestParam Long etudiantId,
+    public ResponseEntity<NoteRecueResponse> recues(@RequestParam Long etudiantId,
                                                     @RequestParam Long sessionId) {
         return ResponseEntity.ok(relectureService.consulterRecue(etudiantId, sessionId));
     }
