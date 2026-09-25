@@ -33,6 +33,9 @@ public class Session {
     @Column(name = "expiration_at", nullable = false)
     private Instant expirationAt;
 
+    @Column(name = "cloture_at")
+    private Instant clotureAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatutSession statut = StatutSession.OUVERTE;
@@ -40,5 +43,10 @@ public class Session {
     // RG1 : le code n'est valable que 15 minutes — la validité se lit sur la session, pas sur le code.
     public boolean estExpiree() {
         return Instant.now().isAfter(expirationAt);
+    }
+
+    // RG13 : la clôture est un état, pas une date à comparer aux yeux de chaque appelant.
+    public boolean estCloturee() {
+        return statut == StatutSession.CLOTUREE;
     }
 }

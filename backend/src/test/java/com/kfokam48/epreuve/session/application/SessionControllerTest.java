@@ -52,4 +52,45 @@ class SessionControllerTest {
                 .andExpect(jsonPath("$.code", notNullValue()))
                 .andExpect(jsonPath("$.message", notNullValue()));
     }
+
+    @Test
+    void cloturer_une_session_renvoie_200_avec_l_instant_de_cloture() throws Exception {
+        long id = ouvrirUneSession();
+
+        mockMvc.perform(post("/api/sessions/{id}/cloture", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.clotureAt", notNullValue()));
+    }
+
+    @Test
+    void cloturer_une_session_deja_cloturee_renvoie_409_au_format_impose() throws Exception {
+        long id = ouvrirUneSession();
+        mockMvc.perform(post("/api/sessions/{id}/cloture", id)).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/sessions/{id}/cloture", id))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("SESSION_DEJA_CLOTUREE"))
+                .andExpect(jsonPath("$.message", notNullValue()));
+    }
+
+    @Test
+    void cloturer_une_session_inconnue_renvoie_404_au_format_impose() throws Exception {
+        mockMvc.perform(post("/api/sessions/{id}/cloture", 999_999L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("SESSION_INCONNUE"))
+                .andExpect(jsonPath("$.message", notNullValue()));
+    }
+
+    /** Ouvre une session et rend son identifiant, pour ne pas répéter la plomberie JSON. */
+    private long ouvrirUneSession() throws Exception {
+        String corps = mockMvc.perform(post("/api/sessions")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new OuvrirSessionRequest("Session démo", 1L))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(corps).get("id").asLong();
+    }
 }
