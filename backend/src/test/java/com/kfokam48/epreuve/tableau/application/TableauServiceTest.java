@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.tableau.application;
 
+import com.kfokam48.epreuve.common.pagination.application.ResultatPage;
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.referentiel.domain.EtudiantRepository;
 import com.kfokam48.epreuve.common.referentiel.domain.PromotionInconnueException;
 import com.kfokam48.epreuve.common.referentiel.domain.PromotionRepository;
@@ -20,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -45,7 +50,7 @@ class TableauServiceTest {
     void refuse_une_promotion_inconnue() {
         when(promotions.trouverParId(999L)).thenReturn(Optional.empty());
 
-        assertThrows(PromotionInconnueException.class, () -> service.recapitulatif(999L));
+        assertThrows(PromotionInconnueException.class, () -> service.recapitulatif(999L, Optional.empty()));
     }
 
     @Test
@@ -58,7 +63,7 @@ class TableauServiceTest {
         when(relectures.moyenneParAuteur(any())).thenReturn(Map.of(7L, 12.5));
         when(relectures.compterEnAttenteParRelecteur(any())).thenReturn(Map.of(7L, 1L));
 
-        List<LigneTableauResponse> tableau = service.recapitulatif(1L);
+        List<LigneTableauResponse> tableau = service.recapitulatif(1L, Optional.empty()).elements();
 
         assertEquals(2, tableau.size(), "une ligne par étudiant de la promotion");
 
@@ -74,6 +79,40 @@ class TableauServiceTest {
         assertEquals(0L, second.presences(), "aucune donnée ⇒ 0, pas null");
         assertEquals(0L, second.relecturesEnAttente());
         assertNull(second.moyenne(), "aucune note reçue ⇒ moyenne absente, et non 0");
+    }
+
+    @Test
+    void sans_pagination_lit_toute_la_promotion_sans_requete_de_comptage() {
+        when(promotions.trouverParId(1L)).thenReturn(Optional.of(new Promotion()));
+        when(etudiants.listerParPromotion(1L)).thenReturn(List.of(etudiant(7L, "Binga")));
+
+        ResultatPage<LigneTableauResponse> resultat = service.recapitulatif(1L, Optional.empty());
+
+        assertEquals(1L, resultat.total(), "le total d'une lecture non paginée est ce qu'elle a lu");
+        verify(etudiants).listerParPromotion(1L);
+        verify(etudiants, never()).compterParPromotion(any());
+    }
+
+    @Test
+    void ne_demande_les_agregats_que_pour_la_page_demandee() {
+        when(promotions.trouverParId(1L)).thenReturn(Optional.of(new Promotion()));
+        when(etudiants.listerParPromotion(eq(1L), any(PageDemandee.class)))
+                .thenReturn(List.of(etudiant(7L, "Binga"), etudiant(8L, "Sans rien")));
+        when(etudiants.compterParPromotion(1L)).thenReturn(60L);
+        when(presences.compterParEtudiant(any())).thenReturn(Map.of(7L, 3L));
+        when(exercices.compterParEtudiant(any())).thenReturn(Map.of(7L, 2L));
+        when(relectures.moyenneParAuteur(any())).thenReturn(Map.of(7L, 12.5));
+        when(relectures.compterEnAttenteParRelecteur(any())).thenReturn(Map.of(7L, 1L));
+
+        ResultatPage<LigneTableauResponse> resultat =
+                service.recapitulatif(1L, Optional.of(new PageDemandee(2, 20)));
+
+        assertEquals(2, resultat.elements().size(), "une ligne par étudiant de la page");
+        assertEquals(60L, resultat.total(), "le total est celui de la promotion, pas celui de la page");
+        verify(etudiants).listerParPromotion(1L, new PageDemandee(2, 20));
+        verify(etudiants, never()).listerParPromotion(1L);
+        // ENF2 : les quatre agrégats ne portent que sur les étudiants de la page, jamais sur les 60.
+        verify(presences).compterParEtudiant(List.of(7L, 8L));
     }
 
     private static Etudiant etudiant(Long id, String nom) {

@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /** Erreur de forme : le contrat impose le format, pas le code (cf. cahier des charges §7). */
-    static final String CODE_REQUETE_INVALIDE = "REQUETE_INVALIDE";
+    static final String CODE_REQUETE_INVALIDE = RequeteInvalideException.CODE;
 
     /** Filet de sécurité : le client ne doit jamais recevoir autre chose que le format imposé. */
     static final String CODE_ERREUR_INTERNE = "ERREUR_INTERNE";

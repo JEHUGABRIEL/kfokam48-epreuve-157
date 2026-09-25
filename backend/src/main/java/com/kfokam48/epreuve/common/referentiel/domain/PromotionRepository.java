@@ -1,5 +1,6 @@
 package com.kfokam48.epreuve.common.referentiel.domain;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.referentiel.domain.model.Promotion;
 
 import java.util.List;
@@ -17,4 +18,10 @@ public interface PromotionRepository {
     Optional<Promotion> trouverParId(Long id);
 
     List<Promotion> listerToutes();
+
+    /** La même lecture, découpée. */
+    List<Promotion> listerToutes(PageDemandee page);
+
+    /** Nombre de promotions avant découpage — alimente l'en-tête X-Total-Count. */
+    long compterToutes();
 }

@@ -237,6 +237,14 @@ paths:
           in: query
           required: true
           schema: { type: integer, format: int64 }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: taille
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
           description: Relectures à rendre
@@ -294,6 +302,19 @@ paths:
           in: query
           required: true
           schema: { type: integer, format: int64 }
+        # --- Pagination, hors contrat imposé (cf. cahier des charges section 7) ---
+        # Optionnels. Sans eux, la promotion entière est rendue : c'est le comportement
+        # que décrit ce contrat, et il ne change pas. Avec eux, la réponse reste un
+        # tableau JSON — jamais une enveloppe — et le total avant découpage est publié
+        # dans l'en-tête X-Total-Count.
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: taille
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
           description: Récapitulatif par étudiant
@@ -312,6 +333,10 @@ paths:
                     exercicesDeposes: { type: integer }
                     moyenne: { type: number, nullable: true }
                     relecturesEnAttente: { type: integer }
+        # 400 REQUETE_INVALIDE : page ou taille hors bornes. Ce statut n'est pas nouveau sur
+        # cette opération — un promotionId non numérique y sortait déjà en 400 sous le même
+        # code, par la règle générale des erreurs de forme (cahier des charges section 7).
+        "400": { $ref: "#/components/responses/Erreur" }
         "404": { $ref: "#/components/responses/Erreur" }   # PROMOTION_INCONNUE
 
   /api/promotions:
@@ -320,6 +345,15 @@ paths:
         Promotions disponibles. Ajoutée hors contrat imposé : POST /api/sessions exige un
         promotionId et l'écran formateur n'a aucun moyen de le choisir sans cette liste
         (EF2, F2).
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: taille
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
           description: Promotions
@@ -346,6 +380,14 @@ paths:
           in: query
           required: true
           schema: { type: integer, format: int64 }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: taille
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
           description: Étudiants de la promotion

@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.relecture.infrastructure;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
+import com.kfokam48.epreuve.common.pagination.infrastructure.ReponsePaginee;
 import com.kfokam48.epreuve.relecture.application.RelectureService;
 import com.kfokam48.epreuve.relecture.application.dto.RelectureAssigneeResponse;
 import com.kfokam48.epreuve.relecture.application.dto.RelectureResponse;
@@ -47,9 +49,14 @@ public class RelectureController {
     }
 
     // UC7 — le relecteur découvre ce qu'il doit rendre, donc l'identifiant à passer ci-dessus.
+    // `page` et `taille` sont optionnels : sans eux, la liste entière, comme avant.
     @GetMapping("/assignees")
-    public ResponseEntity<List<RelectureAssigneeResponse>> assignees(@RequestParam Long relecteurId) {
-        return ResponseEntity.ok(relectureService.listerAssignees(relecteurId));
+    public ResponseEntity<List<RelectureAssigneeResponse>> assignees(
+            @RequestParam Long relecteurId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer taille) {
+        return ReponsePaginee.de(
+                relectureService.listerAssignees(relecteurId, PageDemandee.depuis(page, taille)));
     }
 
     // EF7 / RG6 — l'étudiant relu consulte sa note, sans jamais savoir qui l'a relu.

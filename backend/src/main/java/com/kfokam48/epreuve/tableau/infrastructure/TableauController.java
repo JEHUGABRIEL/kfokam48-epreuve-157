@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.tableau.infrastructure;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
+import com.kfokam48.epreuve.common.pagination.infrastructure.ReponsePaginee;
 import com.kfokam48.epreuve.tableau.application.TableauService;
 import com.kfokam48.epreuve.tableau.application.dto.LigneTableauResponse;
 
@@ -17,6 +19,9 @@ import java.util.List;
  *   <li>{@code GET /api/tableau?promotionId=} → 200 (liste de lignes), 404
  *       {@code PROMOTION_INCONNUE}</li>
  * </ul>
+ * {@code page} et {@code taille} sont optionnels et ne changent rien à ce contrat : sans eux, la
+ * promotion entière est rendue, exactement comme avant. Le corps reste un tableau JSON ; le total est
+ * dans {@code X-Total-Count}.
  */
 @RestController
 @RequestMapping("/api/tableau")
@@ -30,7 +35,11 @@ public class TableauController {
 
     // EF9 / RG14 — le formateur consulte le récapitulatif d'une promotion.
     @GetMapping
-    public ResponseEntity<List<LigneTableauResponse>> tableau(@RequestParam Long promotionId) {
-        return ResponseEntity.ok(tableauService.recapitulatif(promotionId));
+    public ResponseEntity<List<LigneTableauResponse>> tableau(
+            @RequestParam Long promotionId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer taille) {
+        return ReponsePaginee.de(
+                tableauService.recapitulatif(promotionId, PageDemandee.depuis(page, taille)));
     }
 }

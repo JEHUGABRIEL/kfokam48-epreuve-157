@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { api, ErreurApi, type RelectureAssignee } from '../api/client';
+import { api, ErreurApi, TAILLE_PAGE, type RelectureAssignee } from '../api/client';
 import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { Pagination } from '../ui/Pagination';
 import { useEtudiants, usePromotions } from '../ui/useListes';
 
 /**
@@ -11,18 +12,48 @@ import { useEtudiants, usePromotions } from '../ui/useListes';
  * `POST /api/relectures/{id}`. L'auteur de l'exercice n'est jamais affiché (RG6).
  */
 export function EcranRelecteur() {
-  const promotions = usePromotions();
+  const [pagePromotions, setPagePromotions] = useState(1);
+  const promotions = usePromotions(pagePromotions);
   const [promotionId, setPromotionId] = useState<number | null>(null);
-  const etudiants = useEtudiants(promotionId);
+  const [pageEtudiants, setPageEtudiants] = useState(1);
+  const etudiants = useEtudiants(promotionId, pageEtudiants);
   const [relecteurId, setRelecteurId] = useState<number | null>(null);
   const [assignees, setAssignees] = useState<RelectureAssignee[] | null>(null);
+  const [totalAssignees, setTotalAssignees] = useState(0);
+  const [pageAssignees, setPageAssignees] = useState(1);
+
+  /** L'identité change : ce qui était affiché appartenait à quelqu'un d'autre. */
+  function choisirRelecteur(id: number | null) {
+    setRelecteurId(id);
+    setAssignees(null);
+    setTotalAssignees(0);
+    setPageAssignees(1);
+  }
+
+  function choisirPromotion(id: number | null) {
+    setPromotionId(id);
+    choisirRelecteur(null);
+    setPageEtudiants(1);
+  }
+
+  function choisirPagePromotions(page: number) {
+    setPagePromotions(page);
+    setPromotionId(null);
+    choisirRelecteur(null);
+  }
+
+  /** Le nom choisi n'existe pas sur l'autre page : le choix repart de zéro plutôt que de rester invisible. */
+  function choisirPageEtudiants(page: number) {
+    setPageEtudiants(page);
+    choisirRelecteur(null);
+  }
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [commentaires, setCommentaires] = useState<Record<number, string>>({});
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
 
-  async function chargerAssignees() {
+  async function chargerAssignees(page: number) {
     if (relecteurId === null) {
       setErreur('Choisissez votre nom.');
       return;
@@ -31,7 +62,10 @@ export function EcranRelecteur() {
     setErreur(null);
     setSucces(null);
     try {
-      setAssignees(await api.relecturesAssignees(relecteurId));
+      const resultat = await api.relecturesAssignees(relecteurId, page);
+      setAssignees(resultat.elements);
+      setTotalAssignees(resultat.total);
+      setPageAssignees(page);
     } catch (e) {
       setErreur((e as ErreurApi).message);
     } finally {
@@ -48,7 +82,9 @@ export function EcranRelecteur() {
       await api.rendreRelecture(relectureId, noteSaisie, commentaires[relectureId] ?? '');
       setSucces('Relecture rendue : elle est définitive (RG12).');
       if (relecteurId !== null) {
-        setAssignees(await api.relecturesAssignees(relecteurId));
+        const resultat = await api.relecturesAssignees(relecteurId, pageAssignees);
+        setAssignees(resultat.elements);
+        setTotalAssignees(resultat.total);
       }
     } catch (e) {
       setErreur((e as ErreurApi).message);
@@ -69,17 +105,29 @@ export function EcranRelecteur() {
           libelle="Promotion"
           etat={promotions}
           valeur={promotionId}
-          onChange={setPromotionId}
+          onChange={choisirPromotion}
           invitation="— Choisir une promotion —"
+        />
+        <Pagination
+          page={pagePromotions}
+          total={promotions.total}
+          taille={TAILLE_PAGE}
+          onPage={choisirPagePromotions}
         />
         <ListeDeroulante
           libelle="Mon nom"
           etat={etudiants}
           valeur={relecteurId}
-          onChange={setRelecteurId}
+          onChange={choisirRelecteur}
           invitation="— Choisir mon nom —"
         />
-        <button type="button" onClick={chargerAssignees} disabled={chargement}>
+        <Pagination
+          page={pageEtudiants}
+          total={etudiants.total}
+          taille={TAILLE_PAGE}
+          onPage={choisirPageEtudiants}
+        />
+        <button type="button" onClick={() => void chargerAssignees(1)} disabled={chargement}>
           Afficher mes relectures
         </button>
         {chargement && <Chargement texte="Chargement…" />}
@@ -128,6 +176,13 @@ export function EcranRelecteur() {
               </button>
             </div>
           ))}
+
+        <Pagination
+          page={pageAssignees}
+          total={totalAssignees}
+          taille={TAILLE_PAGE}
+          onPage={(page) => void chargerAssignees(page)}
+        />
       </div>
     </section>
   );

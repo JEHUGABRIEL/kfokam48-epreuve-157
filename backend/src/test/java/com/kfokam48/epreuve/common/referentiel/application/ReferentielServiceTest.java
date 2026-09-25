@@ -25,6 +25,6 @@ class ReferentielServiceTest {
 
         ReferentielService service = new ReferentielService(promotions, mock(EtudiantRepository.class));
 
-        assertThrows(PromotionInconnueException.class, () -> service.listerEtudiants(99L));
+        assertThrows(PromotionInconnueException.class, () -> service.listerEtudiants(99L, Optional.empty()));
     }
 }

@@ -126,6 +126,19 @@ label {
   margin-bottom: 0;
 }
 
+/* Le contrôle de pagination : deux boutons et ce qu'ils font. Il n'apparaît qu'au-delà d'une page. */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.pagination p {
+  margin: 0;
+}
+
 input,
 select {
   display: block;
