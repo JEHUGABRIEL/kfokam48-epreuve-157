@@ -1,8 +1,11 @@
 package com.kfokam48.epreuve.common.referentiel.infrastructure.persistence;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.referentiel.domain.PromotionRepository;
 import com.kfokam48.epreuve.common.referentiel.domain.model.Promotion;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,5 +34,18 @@ public class PromotionRepositoryAdapter implements PromotionRepository {
     @Override
     public List<Promotion> listerToutes() {
         return jpaRepository.findAll().stream().map(mapper::versModele).toList();
+    }
+
+    @Override
+    public List<Promotion> listerToutes(PageDemandee page) {
+        return jpaRepository.findAll(PageRequest.of(page.numero() - 1, page.taille(), Sort.by("id").ascending()))
+                .stream()
+                .map(mapper::versModele)
+                .toList();
+    }
+
+    @Override
+    public long compterToutes() {
+        return jpaRepository.count();
     }
 }

@@ -1,5 +1,6 @@
 package com.kfokam48.epreuve.common.referentiel.domain;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.referentiel.domain.model.Etudiant;
 
 import java.util.List;
@@ -16,4 +17,10 @@ public interface EtudiantRepository {
 
     /** EF9 / RG14 : le tableau est construit promotion par promotion, à partir de ses étudiants. */
     List<Etudiant> listerParPromotion(Long promotionId);
+
+    /** La même lecture, découpée. Le tri par nom de {@link #listerParPromotion(Long)} est conservé. */
+    List<Etudiant> listerParPromotion(Long promotionId, PageDemandee page);
+
+    /** Nombre d'étudiants de la promotion avant découpage — alimente l'en-tête X-Total-Count. */
+    long compterParPromotion(Long promotionId);
 }

@@ -2,6 +2,8 @@ package com.kfokam48.epreuve.relecture.infrastructure.persistence;
 
 import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +18,12 @@ public interface RelectureJpaRepository extends JpaRepository<RelectureEntity, L
     Optional<RelectureEntity> findByExerciceId(Long exerciceId);
 
     List<RelectureEntity> findByRelecteurIdAndStatut(Long relecteurId, StatutRelecture statut);
+
+    /** Même lecture, découpée (pagination optionnelle). */
+    Page<RelectureEntity> findByRelecteurIdAndStatut(Long relecteurId, StatutRelecture statut,
+                                                     Pageable pageable);
+
+    long countByRelecteurIdAndStatut(Long relecteurId, StatutRelecture statut);
 
     /**
      * Moyenne des notes reçues par chaque auteur d'exercice (EF9, RG14, ENF2).

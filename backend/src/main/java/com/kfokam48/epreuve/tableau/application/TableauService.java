@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.tableau.application;
 
+import com.kfokam48.epreuve.common.pagination.application.ResultatPage;
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.common.referentiel.domain.EtudiantRepository;
 import com.kfokam48.epreuve.common.referentiel.domain.PromotionInconnueException;
 import com.kfokam48.epreuve.common.referentiel.domain.PromotionRepository;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Module transverse de restitution : pas de domaine propre, il lit les <em>ports</em> des autres
@@ -51,16 +54,33 @@ public class TableauService {
         this.relectureRepository = relectureRepository;
     }
 
-    /** EF9, RG14 — le 404 sur promotion inconnue est imposé par le contrat. */
+    /**
+     * EF9, RG14 — le 404 sur promotion inconnue est imposé par le contrat.
+     *
+     * @param pagination vide si l'appel n'a rien demandé : la réponse est alors exactement celle du
+     *     contrat imposé, la promotion entière. Sinon seuls les étudiants de la page sont lus, et les
+     *     quatre agrégats ne portent que sur eux — ENF2 tient donc aussi page par page.
+     */
     @Transactional(readOnly = true)
-    public List<LigneTableauResponse> recapitulatif(Long promotionId) {
+    public ResultatPage<LigneTableauResponse> recapitulatif(Long promotionId,
+                                                            Optional<PageDemandee> pagination) {
         if (promotionRepository.trouverParId(promotionId).isEmpty()) {
             throw new PromotionInconnueException();
         }
 
-        List<Etudiant> etudiants = etudiantRepository.listerParPromotion(promotionId);
+        List<Etudiant> etudiants;
+        long total;
+        if (pagination.isEmpty()) {
+            etudiants = etudiantRepository.listerParPromotion(promotionId);
+            total = etudiants.size();
+        } else {
+            etudiants = etudiantRepository.listerParPromotion(promotionId, pagination.get());
+            // Le total de la promotion, pas celui de la page : c'est lui qui donne le nombre de pages.
+            total = etudiantRepository.compterParPromotion(promotionId);
+        }
+
         if (etudiants.isEmpty()) {
-            return List.of();
+            return new ResultatPage<>(List.of(), total);
         }
 
         List<Long> etudiantIds = etudiants.stream().map(Etudiant::getId).toList();
@@ -70,7 +90,7 @@ public class TableauService {
         Map<Long, Double> moyennes = relectureRepository.moyenneParAuteur(etudiantIds);
         Map<Long, Long> relecturesEnAttente = relectureRepository.compterEnAttenteParRelecteur(etudiantIds);
 
-        return etudiants.stream()
+        List<LigneTableauResponse> lignes = etudiants.stream()
                 .map(etudiant -> new LigneTableauResponse(
                         etudiant.getId(),
                         etudiant.getNom(),
@@ -79,5 +99,6 @@ public class TableauService {
                         moyennes.get(etudiant.getId()),
                         relecturesEnAttente.getOrDefault(etudiant.getId(), 0L)))
                 .toList();
+        return new ResultatPage<>(lignes, total);
     }
 }

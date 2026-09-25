@@ -1,5 +1,7 @@
 package com.kfokam48.epreuve.relecture.application;
 
+import com.kfokam48.epreuve.common.pagination.application.ResultatPage;
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.exercice.domain.ExerciceInconnuException;
 import com.kfokam48.epreuve.exercice.domain.ExerciceRepository;
 import com.kfokam48.epreuve.exercice.domain.model.Exercice;
@@ -140,8 +142,20 @@ public class RelectureService {
      * imposée existerait sans que personne puisse l'appeler.
      */
     @Transactional(readOnly = true)
-    public List<RelectureAssigneeResponse> listerAssignees(Long relecteurId) {
-        return relectureRepository.listerParRelecteurEtStatut(relecteurId, StatutRelecture.ASSIGNEE).stream()
+    public ResultatPage<RelectureAssigneeResponse> listerAssignees(Long relecteurId,
+                                                                   Optional<PageDemandee> pagination) {
+        List<Relecture> assignees;
+        long total;
+        if (pagination.isEmpty()) {
+            assignees = relectureRepository.listerParRelecteurEtStatut(relecteurId, StatutRelecture.ASSIGNEE);
+            total = assignees.size();
+        } else {
+            assignees = relectureRepository.listerParRelecteurEtStatut(relecteurId, StatutRelecture.ASSIGNEE,
+                    pagination.get());
+            total = relectureRepository.compterParRelecteurEtStatut(relecteurId, StatutRelecture.ASSIGNEE);
+        }
+
+        List<RelectureAssigneeResponse> reponses = assignees.stream()
                 .map(relecture -> {
                     Exercice exercice = exerciceRepository.trouverParId(relecture.getExerciceId())
                             .orElseThrow(() -> new ExerciceInconnuException(relecture.getExerciceId()));
@@ -153,6 +167,7 @@ public class RelectureService {
                             relecture.getStatut());
                 })
                 .toList();
+        return new ResultatPage<>(reponses, total);
     }
 
     /**

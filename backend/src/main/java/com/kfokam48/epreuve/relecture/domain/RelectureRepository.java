@@ -1,5 +1,6 @@
 package com.kfokam48.epreuve.relecture.domain;
 
+import com.kfokam48.epreuve.common.pagination.domain.PageDemandee;
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
 import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
@@ -27,6 +28,12 @@ public interface RelectureRepository {
      * passer en chemin.
      */
     List<Relecture> listerParRelecteurEtStatut(Long relecteurId, StatutRelecture statut);
+
+    /** La même lecture, découpée. */
+    List<Relecture> listerParRelecteurEtStatut(Long relecteurId, StatutRelecture statut, PageDemandee page);
+
+    /** Nombre de relectures attendues par ce relecteur, avant découpage. */
+    long compterParRelecteurEtStatut(Long relecteurId, StatutRelecture statut);
 
     /**
      * EF9 / RG14 : la moyenne des notes reçues, par auteur de l'exercice relu. Absent de la carte =

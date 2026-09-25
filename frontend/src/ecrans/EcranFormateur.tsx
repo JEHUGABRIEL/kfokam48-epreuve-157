@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { api, ErreurApi, type LigneTableau, type SessionOuverte } from '../api/client';
+import { api, ErreurApi, TAILLE_PAGE, type LigneTableau, type SessionOuverte } from '../api/client';
 import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { Pagination } from '../ui/Pagination';
 import { usePromotions } from '../ui/useListes';
 
 /**
@@ -10,11 +11,30 @@ import { usePromotions } from '../ui/useListes';
  * La moyenne affichée vient de l'API : elle n'est jamais recalculée ici (F3).
  */
 export function EcranFormateur() {
-  const promotions = usePromotions();
+  const [pagePromotions, setPagePromotions] = useState(1);
+  const promotions = usePromotions(pagePromotions);
   const [promotionId, setPromotionId] = useState<number | null>(null);
   const [titre, setTitre] = useState('Séance du jour');
   const [session, setSession] = useState<SessionOuverte | null>(null);
   const [tableau, setTableau] = useState<LigneTableau[] | null>(null);
+  const [totalTableau, setTotalTableau] = useState(0);
+  const [pageTableau, setPageTableau] = useState(1);
+
+  /** Changer de promotion rend le tableau affiché caduc : celui de l'autre promotion n'a rien à faire ici. */
+  function choisirPromotion(id: number | null) {
+    setPromotionId(id);
+    setTableau(null);
+    setTotalTableau(0);
+    setPageTableau(1);
+  }
+
+  /** Changer de page change ce que la liste contient : un choix fait sur une autre page n'y est plus. */
+  function choisirPagePromotions(page: number) {
+    setPagePromotions(page);
+    setPromotionId(null);
+    setTableau(null);
+    setTotalTableau(0);
+  }
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
@@ -54,7 +74,7 @@ export function EcranFormateur() {
     }
   }
 
-  async function chargerTableau() {
+  async function chargerTableau(page: number) {
     if (promotionId === null) {
       setErreur('Choisissez une promotion.');
       return;
@@ -62,7 +82,10 @@ export function EcranFormateur() {
     setChargement(true);
     setErreur(null);
     try {
-      setTableau(await api.tableau(promotionId));
+      const resultat = await api.tableau(promotionId, page);
+      setTableau(resultat.elements);
+      setTotalTableau(resultat.total);
+      setPageTableau(page);
     } catch (e) {
       setErreur((e as ErreurApi).message);
     } finally {
@@ -82,8 +105,14 @@ export function EcranFormateur() {
           libelle="Promotion"
           etat={promotions}
           valeur={promotionId}
-          onChange={setPromotionId}
+          onChange={choisirPromotion}
           invitation="— Choisir une promotion —"
+        />
+        <Pagination
+          page={pagePromotions}
+          total={promotions.total}
+          taille={TAILLE_PAGE}
+          onPage={choisirPagePromotions}
         />
         <label>
           Titre de la séance
@@ -110,7 +139,7 @@ export function EcranFormateur() {
 
       <div className="carte">
         <h3>Tableau récapitulatif</h3>
-        <button type="button" onClick={chargerTableau} disabled={chargement}>
+        <button type="button" onClick={() => void chargerTableau(1)} disabled={chargement}>
           Afficher le tableau de la promotion
         </button>
         {chargement && <Chargement texte="Chargement…" />}
@@ -139,6 +168,12 @@ export function EcranFormateur() {
             </tbody>
           </table>
         )}
+        <Pagination
+          page={pageTableau}
+          total={totalTableau}
+          taille={TAILLE_PAGE}
+          onPage={(page) => void chargerTableau(page)}
+        />
       </div>
     </section>
   );

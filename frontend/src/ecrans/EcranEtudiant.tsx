@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { api, ErreurApi, type RelectureRecue } from '../api/client';
+import { api, ErreurApi, TAILLE_PAGE, type RelectureRecue } from '../api/client';
 import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { Pagination } from '../ui/Pagination';
 import { useEtudiants, usePromotions } from '../ui/useListes';
 
 /**
@@ -13,12 +14,36 @@ import { useEtudiants, usePromotions } from '../ui/useListes';
  * laisser un identifiant traîner sur un téléphone partagé.
  */
 export function EcranEtudiant() {
-  const promotions = usePromotions();
+  const [pagePromotions, setPagePromotions] = useState(1);
+  const promotions = usePromotions(pagePromotions);
   const [promotionId, setPromotionId] = useState<number | null>(null);
-  const etudiants = useEtudiants(promotionId);
+  const [pageEtudiants, setPageEtudiants] = useState(1);
+  const etudiants = useEtudiants(promotionId, pageEtudiants);
   // Aucun nom n'est pré-sélectionné : le premier étudiant de la liste n'est pas forcément l'utilisateur
   // devant son écran, et un clic sur « Marquer ma présence » engageait quelqu'un d'autre.
   const [etudiantId, setEtudiantId] = useState<number | null>(null);
+
+  function choisirPromotion(id: number | null) {
+    setPromotionId(id);
+    setEtudiantId(null);
+    setPageEtudiants(1);
+  }
+
+  /**
+   * Changer de page change ce que la liste contient : le nom choisi n'y figure plus, alors que
+   * l'application croirait encore savoir qui vous êtes. Le choix est donc remis à zéro, jamais
+   * conservé en coulisse.
+   */
+  function choisirPagePromotions(page: number) {
+    setPagePromotions(page);
+    setPromotionId(null);
+    setEtudiantId(null);
+  }
+
+  function choisirPageEtudiants(page: number) {
+    setPageEtudiants(page);
+    setEtudiantId(null);
+  }
 
   const [code, setCode] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -87,8 +112,14 @@ export function EcranEtudiant() {
           libelle="Promotion"
           etat={promotions}
           valeur={promotionId}
-          onChange={setPromotionId}
+          onChange={choisirPromotion}
           invitation="— Choisir une promotion —"
+        />
+        <Pagination
+          page={pagePromotions}
+          total={promotions.total}
+          taille={TAILLE_PAGE}
+          onPage={choisirPagePromotions}
         />
         <ListeDeroulante
           libelle="Mon nom"
@@ -96,6 +127,12 @@ export function EcranEtudiant() {
           valeur={etudiantId}
           onChange={setEtudiantId}
           invitation="— Choisir mon nom —"
+        />
+        <Pagination
+          page={pageEtudiants}
+          total={etudiants.total}
+          taille={TAILLE_PAGE}
+          onPage={choisirPageEtudiants}
         />
       </div>
 
