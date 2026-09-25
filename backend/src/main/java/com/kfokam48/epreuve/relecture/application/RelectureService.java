@@ -1,10 +1,21 @@
 package com.kfokam48.epreuve.relecture.application;
 
+import com.kfokam48.epreuve.exercice.domain.ExerciceInconnuException;
+import com.kfokam48.epreuve.exercice.domain.ExerciceRepository;
+import com.kfokam48.epreuve.exercice.domain.model.Exercice;
 import com.kfokam48.epreuve.presence.domain.PresenceRepository;
 import com.kfokam48.epreuve.presence.domain.model.Presence;
+import com.kfokam48.epreuve.relecture.application.dto.RelectureResponse;
+import com.kfokam48.epreuve.relecture.application.dto.RendreRelectureRequest;
+import com.kfokam48.epreuve.relecture.domain.AutoRelectureException;
+import com.kfokam48.epreuve.relecture.domain.RelectureInconnueException;
 import com.kfokam48.epreuve.relecture.domain.RelectureRepository;
 import com.kfokam48.epreuve.relecture.domain.model.Relecture;
 import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
+import com.kfokam48.epreuve.session.domain.SessionDejaClotureeException;
+import com.kfokam48.epreuve.session.domain.SessionInconnueException;
+import com.kfokam48.epreuve.session.domain.SessionRepository;
+import com.kfokam48.epreuve.session.domain.model.Session;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,19 +32,29 @@ import java.util.Optional;
  *
  * <p>Appelé par {@code ExerciceService} dans la même transaction que le dépôt : un exercice enregistré
  * sans son tirage serait un exercice que personne ne corrige (RG4).
+ *
+ * <p>Puis rendre une note et un commentaire sur la relecture assignée : EF6, RG2, RG3, RG12, RG13.
+ * Ici, le module ne dépend que des <em>ports</em> des autres modules (session, exercice) — jamais de
+ * leur infrastructure, ce qui tient la règle de dépendance.
  */
 @Service
 public class RelectureService {
 
     private final RelectureRepository relectureRepository;
     private final PresenceRepository presenceRepository;
+    private final ExerciceRepository exerciceRepository;
+    private final SessionRepository sessionRepository;
     private final TirageAuSort tirageAuSort;
 
     public RelectureService(RelectureRepository relectureRepository,
                             PresenceRepository presenceRepository,
+                            ExerciceRepository exerciceRepository,
+                            SessionRepository sessionRepository,
                             TirageAuSort tirageAuSort) {
         this.relectureRepository = relectureRepository;
         this.presenceRepository = presenceRepository;
+        this.exerciceRepository = exerciceRepository;
+        this.sessionRepository = sessionRepository;
         this.tirageAuSort = tirageAuSort;
     }
 
@@ -67,5 +88,45 @@ public class RelectureService {
         relecture.setAssigneeAt(Instant.now());
 
         return Optional.of(relectureRepository.enregistrer(relecture));
+    }
+
+    /**
+     * Le relecteur rend sa note et son commentaire : EF6, RG2, RG3, RG12, RG13.
+     *
+     * <p>L'ordre des contrôles est celui des règles : la relecture existe, l'auteur n'est pas le
+     * relecteur (403 imposé par le contrat), la session n'est pas clôturée (RG13), puis le domaine
+     * applique le verrou RG12 et la borne RG3.
+     */
+    @Transactional
+    public RelectureResponse rendre(Long relectureId, RendreRelectureRequest requete) {
+        Relecture relecture = relectureRepository.trouverParId(relectureId)
+                .orElseThrow(() -> new RelectureInconnueException(relectureId));
+
+        Exercice exercice = exerciceRepository.trouverParId(relecture.getExerciceId())
+                .orElseThrow(() -> new ExerciceInconnuException(relecture.getExerciceId()));
+
+        // RG2 : le tirage ne désigne jamais l'auteur (RG5), mais l'écriture le revérifie — c'est cette
+        // opération que le contrat impose en 403 AUTO_RELECTURE. Une règle qu'on ne peut pas
+        // revérifier au moment d'écrire n'est pas une règle, c'est une espérance.
+        if (relecture.getRelecteurId().equals(exercice.getEtudiantId())) {
+            throw new AutoRelectureException();
+        }
+
+        // RG13 : la clôture verrouille les relectures comme le reste (Q10, Q11, Q15).
+        Session session = sessionRepository.trouverParId(exercice.getSessionId())
+                .orElseThrow(() -> new SessionInconnueException(exercice.getSessionId()));
+        if (session.estCloturee()) {
+            throw new SessionDejaClotureeException(session.getId());
+        }
+
+        relecture.rendre(requete.note(), requete.commentaire());
+        Relecture enregistree = relectureRepository.enregistrer(relecture);
+
+        // D4 : l'exercice passe RELU, ce qui ferme la fenêtre de remplacement du lien (RG10).
+        exercice.marquerRelu();
+        exerciceRepository.enregistrer(exercice);
+
+        return new RelectureResponse(enregistree.getStatut(), enregistree.getNote(),
+                enregistree.getCommentaire());
     }
 }
