@@ -1,42 +1,82 @@
 # CHANGELOG — kfokam48-epreuve-157
 
-Ce journal suit l'ordre réel de l'historique Git, jalons compris. Les numéros entre parenthèses sont
-ceux des issues du dépôt.
+Ce fichier décrit ce qui a été livré, dans l'ordre où l'historique Git le montre. Il n'est pas réécrit
+après coup : chaque entrée correspond à des commits et des pull requests qui existent sur `main`.
 
-## [JALON] v0.1 — première version
+Le projet suit six étapes imposées par le sujet : analyse, `v0.1`, enveloppe, `v1.0`, épreuve Git,
+soumission.
 
-### Ajouté
+---
 
-- **Socle technique** : wrapper Maven 3.9.16 (`only-script`, `mvnw` commité), `pom.xml` Spring Boot
-  4.1.1 sur Java 17, `compose.yaml` PostgreSQL 16 sur le port hôte 5433. (branche `chore/socle-maven`)
-- **Base de données versionnée** : `V1__schema_initial.sql` (les 6 tables du modèle, index sur chaque
-  clé étrangère, contraintes d'unicité et de cohérence en base) puis
-  `V2__donnees_de_demonstration.sql` (1 promotion, 60 étudiants, une session ouverte `DEMO24`).
-  Profils dev (PostgreSQL, `ddl-auto: validate`) et test (H2 en mémoire, Flyway désactivé).
-  (branche `chore/base-de-donnees`)
-- **Erreurs au format imposé** (#9) : `GlobalExceptionHandler` rend `{ code, message }` pour toute
-  erreur — erreurs métier, erreurs de forme, pannes internes — sans jamais laisser fuir de trace
-  technique (B4, ENF3).
-- **Ouvrir une session** (#1) : `POST /api/sessions` remet un code à alphabet non ambigu et fixe la
-  fenêtre de validité de 15 minutes (EF2, RG1).
-- **Clôturer une session** (#7) : `POST /api/sessions/{id}/cloture` verrouille la session ; toute
-  seconde clôture est refusée (EF8, RG13).
-- **Convention de travail et outillage** (#17, #19, #18, #20) : `AGENTS.md` fixe la convention Git,
-  `knowledge.md` porte le contexte technique, `docs/JOURNAL.md` est ouvert, et le statut `429
-  TROP_DE_TENTATIVES` est ajouté au contrat pour rendre RG8 observable.
-- **Modèle du domaine séparé de l'entité JPA** (#33) : `domain/model/` ne connaît plus la persistance,
-  le dépôt du domaine devient un port, l'entité, le mapper et l'adaptateur vivent en infrastructure.
+## [Étape 1] Analyse et conception — commit `[JALON] analyse`
 
-### Corrigé
+- `docs/CAHIER_DES_CHARGES.md` : les dix sections imposées, 9 exigences fonctionnelles (`EF1`–`EF9`),
+  5 exigences non fonctionnelles (`ENF1`–`ENF5`), 14 règles de gestion (`RG1`–`RG14`), chacune sourcée
+  sur une question `Qx` ou sur une hypothèse explicite de la section 7.
+- Section 7 : le trou du sujet est nommé (la présence est-elle requise pour déposer un exercice ?), la
+  contradiction `Q10` / `Q15` est tranchée en faveur de `Q15` et justifiée par la citation du client,
+  et les hypothèses non couvertes par les 16 `Qx` sont écrites plutôt que subies.
+- `docs/diagrammes/` : `D1` cas d'utilisation, `D2` modèle de données (aligné sur les migrations),
+  `D3` séquence « marquer sa présence » avec ses deux chemins d'erreur, `D4` états-transitions d'un
+  exercice (bonus).
+- `api/contrat.yaml` complété : les 5 opérations imposées, plus les opérations nécessaires à la
+  lecture (`GET /api/relectures/recues`, `.../assignees`, `/api/promotions`, `/api/etudiants`) et à la
+  clôture de session, sans laquelle aucune règle dépendant de l'état « session clôturée » n'est
+  implémentable.
+- Backlog de 14 issues, priorisées Must / Should / Could, chacune avec un critère d'acceptation
+  vérifiable et le renvoi à ses `EFx` / `RGx`.
 
-- **`main` ne compilait pas** (#31) : `ApiException` et `ErreurDto`, dont dépend tout le format
-  d'erreur, n'avaient jamais été commités. La règle de vérification manquante est désormais écrite
-  dans `AGENTS.md` — vérifier la branche telle qu'elle arrivera sur `main`, pas l'arbre de travail.
-- **Diagrammes invisibles sur GitHub** (#13) : les `.mmd` et `.puml` sont convertis en Markdown
-  contenant un bloc Mermaid, et un quatrième diagramme d'états-transitions est ajouté (bonus).
+## [Étape 2] Première version — commit `[JALON] v0.1`
 
-## [JALON] analyse — analyse et conception
+- Socle : wrapper Maven commité (B1), Spring Boot 4.1.1 / Java 17, `compose.yaml` PostgreSQL 16 sur le
+  port hôte 5433, profils dev (`validate`) et test (H2, Flyway désactivé) (B5).
+- Schéma versionné : `V1__schema_initial.sql` (6 tables, index sur les clés étrangères, unicité
+  `(session_id, etudiant_id)` portée par la base — ENF4) et `V2__donnees_de_demonstration.sql`
+  (1 promotion, 60 étudiants, une session ouverte).
+- `common/error/` : format d'erreur imposé `{ code, message }` centralisé dans un `@RestControllerAdvice`
+  (B4), sans fuite de stack trace (ENF3).
+- Architecture : chaque module en `domain/` (modèle pur + port) → `application/` (cas d'usage + DTO) →
+  `infrastructure/` (contrôleur + persistance). Le modèle du domaine ne connaît ni JPA ni JSON.
+- Opérations livrées : ouvrir une session (EF2, RG1), clôturer (EF8, RG13), marquer sa présence avec
+  ses quatre refus dont le blocage RG8 en `429` (EF1, RG7, RG8), déposer un exercice (EF3, RG9),
+  assigner le relecteur par tirage au sort (EF5, RG2, RG5, RG4), rendre une relecture verrouillée
+  (EF6, RG3, RG12), lire sa note sans l'identité du relecteur (EF7, RG6), tableau récapitulatif
+  (EF9, RG14, ENF2), remplacer le lien (EF4, RG10), et les listes d'identification (Q1).
+- Frontend React + Vite + TypeScript : trois écrans (F2), une couche d'appels API unique (F3), états de
+  chargement et d'erreur mutualisés, aucun calcul métier dupliqué (la moyenne vient de l'API).
+- Tests : 37 tests, dont 20 unitaires qui tournent **sans contexte Spring** et un test d'intégration du
+  contrôleur jusqu'à la base (B6). `./mvnw test` ne demande ni Docker ni PostgreSQL.
 
-- Cahier des charges complet (10 sections, 9 `EF`, 5 `ENF`, 14 `RG` sourcées, section 7 des zones
-  d'ombre et contradictions), trois diagrammes versionnés en texte, backlog de 14 issues priorisées,
-  contrat d'API complété. Aucune ligne de code avant ce jalon.
+### Incidents de l'étape 2, et ce qu'ils ont changé
+
+- **`main` a été cassée deux fois** par des classes référencées mais non commitées, puis par un import
+  manquant. Chaque fois, la vérification locale passait parce que l'arbre de travail contenait le
+  fichier absent du dépôt. Correctifs dédiés, et règle écrite dans `AGENTS.md` : vérifier la branche
+  **telle qu'elle arrivera sur `main`**, pas telle qu'elle est sur le disque.
+- **Un run de `./mvnw` enchaîné dans un pipe a masqué un échec de compilation** (le code de sortie
+  retenu était celui de `grep`), ce qui a laissé passer le second incident. Les vérifications sont
+  désormais lancées sans pipe et arrêtent la chaîne de commandes en cas d'échec.
+
+## [Étape 3] Enveloppe
+
+- **Non ouverte** : le script `enveloppe` n'a pas été remis au candidat pendant l'épreuve
+  (cf. `docs/JOURNAL.md`). Le bug signalé et le changement de besoin ne sont donc pas traités, et
+  l'analyse n'a pas eu à être corrigée en conséquence.
+
+## [Étape 4] Version finale — commit `[JALON] v1.0`
+
+- `README.md` réécrit pour décrire l'application **réellement livrée** : trois commandes vérifiées,
+  données de démonstration, parcours de bout en bout pour les trois rôles, et une section qui annonce
+  ce qui n'est pas livré plutôt que de le laisser découvrir.
+- `CHANGELOG.md` (ce fichier) aligné sur l'historique Git.
+- `docs/CAHIER_DES_CHARGES.md` version 1.5 : §7 complétée (codes de référence en 404, `409`
+  `SESSION_DEJA_CLOTUREE`, note non entière) et §9 corrigé — la liste des livrables citait encore des
+  fichiers `.puml` / `.mmd` antérieurs au renommage en `.md`.
+- `SOUMISSION.md` complété : dépôt, hash du commit final sur `main`, commandes de démarrage.
+
+## Reste à faire (assumé)
+
+- **`#11` — ajout manuel d'une présence par le formateur** (`RG11`, `Q14`, priorité *Should*) : non
+  implémenté. La colonne `source` et l'énumération `ETUDIANT` / `FORMATEUR` existent depuis `V1`.
+- Épreuve Git (étape 5) : `git-lab.bundle` n'a pas été remis au candidat ; le second dépôt
+  `kfokam48-gitlab-157` n'a donc pas de contenu à recevoir.
