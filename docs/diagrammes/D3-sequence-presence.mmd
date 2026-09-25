@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant E as Étudiant
+    participant F as Front
+    participant API as PresenceController
+    participant S as PresenceService
+    participant DB as Base de données
+
+    E->>F: saisit le code
+    F->>API: POST /api/presences { code, etudiantId }
+    API->>S: enregistrer(code, etudiantId)
+    S->>DB: rechercher session par code
+
+    alt code inconnu
+        DB-->>S: aucune session trouvée
+        S-->>API: CodeInconnuException
+        API-->>F: 400 { code: "CODE_INCONNU" }
+        F-->>E: affiche l'erreur, invite à ressaisir
+    else code expiré (RG1)
+        DB-->>S: session trouvée, expirationAt dépassé
+        S-->>API: CodeExpireException
+        API-->>F: 410 { code: "CODE_EXPIRE" }
+        F-->>E: affiche l'erreur, code périmé
+    else déjà présent (RG7)
+        DB-->>S: présence existante (sessionId, etudiantId)
+        S-->>API: DejaPresentException
+        API-->>F: 409 { code: "DEJA_PRESENT" }
+        F-->>E: affiche l'erreur, présence déjà enregistrée
+    else cas nominal
+        DB-->>S: session valide, aucune présence existante
+        S->>DB: créer Presence(sessionId, etudiantId, source=ETUDIANT)
+        DB-->>S: Presence créée
+        S-->>API: Presence
+        API-->>F: 201 { id, sessionId, etudiantId, source }
+        F-->>E: confirmation de présence
+    end
