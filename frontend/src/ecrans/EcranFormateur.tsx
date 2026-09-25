@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import { api, ErreurApi, type LigneTableau, type Promotion, type SessionOuverte } from '../api/client';
+import { useState } from 'react';
+import { api, ErreurApi, type LigneTableau, type SessionOuverte } from '../api/client';
+import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { usePromotions } from '../ui/useListes';
 
 /**
  * Écran formateur — EF2 (ouvrir une session et obtenir un code), EF8 (clôturer), EF9 (tableau).
@@ -8,7 +10,7 @@ import { Chargement, Erreur, Succes } from '../ui/Messages';
  * La moyenne affichée vient de l'API : elle n'est jamais recalculée ici (F3).
  */
 export function EcranFormateur() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const promotions = usePromotions();
   const [promotionId, setPromotionId] = useState<number | null>(null);
   const [titre, setTitre] = useState('Séance du jour');
   const [session, setSession] = useState<SessionOuverte | null>(null);
@@ -16,18 +18,6 @@ export function EcranFormateur() {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .promotions()
-      .then((liste) => {
-        setPromotions(liste);
-        if (liste.length > 0) {
-          setPromotionId(liste[0].id);
-        }
-      })
-      .catch((e: ErreurApi) => setErreur(e.message));
-  }, []);
 
   async function ouvrir() {
     if (promotionId === null) {
@@ -88,19 +78,13 @@ export function EcranFormateur() {
 
       <div className="carte">
         <h3>Ouvrir une session</h3>
-        <label>
-          Promotion
-          <select
-            value={promotionId ?? ''}
-            onChange={(evenement) => setPromotionId(Number(evenement.target.value))}
-          >
-            {promotions.map((promotion) => (
-              <option key={promotion.id} value={promotion.id}>
-                {promotion.nom}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ListeDeroulante
+          libelle="Promotion"
+          etat={promotions}
+          valeur={promotionId}
+          onChange={setPromotionId}
+          invitation="— Choisir une promotion —"
+        />
         <label>
           Titre de la séance
           <input value={titre} onChange={(evenement) => setTitre(evenement.target.value)} />
