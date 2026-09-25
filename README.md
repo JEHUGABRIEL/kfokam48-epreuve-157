@@ -1,8 +1,9 @@
 # kfokam48-epreuve-157 — Suivi de présence, dépôt d'exercices et relecture entre pairs
 
 Application de suivi de présence en session de cours. Le formateur ouvre une session et obtient un
-code de présence ; l'étudiant marque sa présence, dépose le lien de son exercice ; un relecteur est
-assigné automatiquement parmi les présents ; le formateur consulte un tableau récapitulatif.
+code de présence ; l'étudiant marque sa présence, dépose le lien de son exercice ; **deux** relecteurs
+sont assignés automatiquement parmi les présents, et la note retenue est la moyenne des deux ; le
+formateur consulte un tableau récapitulatif.
 
 Le cœur du sujet n'est pas l'interface mais les règles métier : code qui expire, pas d'auto-relecture,
 note verrouillée une fois rendue, clôture de session irréversible (cf. `docs/CAHIER_DES_CHARGES.md`).
@@ -90,7 +91,7 @@ curl -X POST http://localhost:8080/api/sessions \
 ### Vérifier l'installation
 
 ```bash
-cd backend && ./mvnw test     # 47 tests, sans Docker ni PostgreSQL (H2 en mémoire)
+cd backend && ./mvnw test     # 58 tests, sans Docker ni PostgreSQL (H2 en mémoire)
 cd frontend && npm run build  # vérification de types + build de production
 ```
 
@@ -112,6 +113,11 @@ Le parcours complet a été exécuté sur la vraie base, et non seulement en tes
 | `GET /api/relectures/recues` | `200 { statut: "RENDUE", note: 15, commentaire: … }` — sans le nom du relecteur (RG6) |
 | `GET /api/tableau` | `moyenne: 15.0` pour l'auteur relu, `moyenne: null` pour un étudiant sans note |
 | `POST /api/sessions/{id}/cloture` | `200` ; puis `409 SESSION_DEJA_CLOTUREE` sur toute présence ou dépôt (RG13) |
+| `POST /api/presences` × 6, simultanés, même étudiant | `201` × 1 et `409 DEJA_PRESENT` × 5 — jamais `500` (correctif `#78`) |
+| Dépôt avec quatre présents | deux relectures assignées, l'auteur exclu, deux relecteurs distincts (RG4 révisée) |
+| Première note rendue `12` | `GET /api/relectures/recues` → `{ note: 12.0, provisoire: true }` |
+| Seconde note rendue `17` | `{ note: 14.5, provisoire: false }` et l'exercice passe `RELU` |
+| Migration `V3` | appliquée sur une base **déjà remplie** : relecture existante intacte, contrainte devenue `(exercice_id, relecteur_id)` |
 
 ---
 
@@ -138,6 +144,13 @@ Opérations ajoutées, documentées dans le contrat et en §7 du cahier des char
 | `GET /api/relectures/assignees` | c'est la seule façon pour le relecteur de connaître l'identifiant à passer au `POST` imposé |
 | `GET /api/relectures/recues` | EF7 / RG6 : le contrat permettait d'écrire une note, pas de la lire |
 | `POST /api/presences/formateur` | RG11 / Q14 : le formateur ajoute une présence à la main (souci de téléphone), marquée `source = FORMATEUR` pour que l'ajout se voie |
+
+**Deux relecteurs par exercice** (`#81`–`#83`) : le client a retiré Q6 (« un seul relecteur ça ne marche
+pas : quand il ne rend rien, l'étudiant n'a aucune note »). Chaque exercice est relu par deux pairs
+distincts tirés parmi les présents, jamais l'auteur, et la **note retenue** est la moyenne des deux ;
+celle du seul pair qui a rendu reste affichée, marquée **provisoire** (`provisoire: true` sur
+`GET /api/relectures/recues`, et l'écran étudiant écrit le mot). L'exercice n'est `RELU` qu'à la
+dernière note. La migration `V3` est **ajoutée**, jamais substituée à `V2`. Détail et décisions en §7.
 
 **Pagination** (`#70`) : `page` et `taille` sont acceptés en paramètres **optionnels** sur les quatre
 lectures (`/api/tableau`, `/api/etudiants`, `/api/promotions`, `/api/relectures/assignees`). Un appel
@@ -172,7 +185,8 @@ vient de `GET /api/tableau` (F3).
 | `SessionTest` | RG1 et RG13 : fenêtre de validité et état de clôture, **sans base ni contexte Spring** |
 | `ExerciceTest` | la validité du lien d'exercice (400 `LIEN_INVALIDE`) |
 | `RelectureTest` | RG3 (note entière de 0 à 20) et RG12 (une relecture rendue ne se modifie plus) |
-| `RelectureServiceTest` | RG2 et RG5 : l'auteur n'est jamais candidat, le relecteur est tiré parmi les présents |
+| `RelectureServiceTest` | RG2 et RG5 : l'auteur n'est jamais candidat, **deux pairs distincts** sont tirés parmi les présents, et l'exercice reste en attente tant qu'une note manque |
+| `NoteRetenueTest` | RG4 révisée : la note retenue est la moyenne des deux, `provisoire` tant que le second n'a pas rendu, et aucune note n'est inventée quand rien n'est rendu |
 | `RelectureResponseTest` | RG6 : le DTO de sortie ne peut pas transporter l'identité du relecteur |
 | `PresenceServiceTest` | EF1 / RG7 / RG8 : les refus de la présence, dont le blocage après cinq échecs |
 | `ReferentielServiceTest` | Q1 : les listes d'identification, découpées par promotion |
@@ -182,7 +196,7 @@ vient de `GET /api/tableau` (F3).
 | `GlobalExceptionHandlerTest` | B4 : `{ code, message }` pour toute erreur, sans fuite technique (ENF3) |
 | `SessionMapperTest`, `SessionRepositoryAdapterTest` | l'aller-retour modèle ↔ entité ne perd aucun champ, et la persistance tient à travers le port |
 
-**13 classes, 47 tests.** B6 est couvert au-delà du minimum : les règles métier se testent **sans
+**14 classes, 58 tests.** B6 est couvert au-delà du minimum : les règles métier se testent **sans
 contexte Spring**, et un test part du contrôleur pour aller jusqu'à la base.
 
 ---
@@ -217,8 +231,10 @@ Dépendances entre modules : `application/` peut appeler l'`application/` ou le 
 module (`ExerciceService` demande le tirage au sort à `RelectureService`), mais jamais son
 `infrastructure/`.
 
-Le schéma est versionné par Flyway (`V1__schema_initial.sql`, `V2__donnees_de_demonstration.sql`) ;
-`ddl-auto` vaut `validate` hors tests, et `create-drop` dans le profil `test`.
+Le schéma est versionné par Flyway (`V1__schema_initial.sql`, `V2__donnees_de_demonstration.sql`,
+`V3__deux_relecteurs_par_exercice.sql`) ; `ddl-auto` vaut `validate` hors tests, et `create-drop` dans
+le profil `test`. Une migration déjà appliquée n'est jamais modifiée en place : le changement de besoin
+de l'étape 3 en a ajouté une, et la base existante y a survécu.
 
 ---
 
