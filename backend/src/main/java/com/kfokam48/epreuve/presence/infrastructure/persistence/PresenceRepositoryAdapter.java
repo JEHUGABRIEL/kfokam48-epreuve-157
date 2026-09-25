@@ -5,7 +5,10 @@ import com.kfokam48.epreuve.presence.domain.model.Presence;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Implémente le port du domaine au-dessus de Spring Data et du mapper. */
@@ -28,10 +31,22 @@ public class PresenceRepositoryAdapter implements PresenceRepository {
     @Override
     public Optional<Presence> trouverParSessionEtEtudiant(Long sessionId, Long etudiantId) {
         return jpaRepository.findBySessionIdAndEtudiantId(sessionId, etudiantId).map(mapper::versModele);
+    }    @Override
+    public List<Presence> trouverParSession(Long sessionId) {
+        return jpaRepository.findBySessionId(sessionId).stream()
+                .map(mapper::versModele)
+                .toList();
     }
 
     @Override
-    public List<Presence> trouverParSession(Long sessionId) {
-        return jpaRepository.findBySessionId(sessionId).stream().map(mapper::versModele).toList();
+    public Map<Long, Long> compterParEtudiant(Collection<Long> etudiantIds) {
+        Map<Long, Long> comptes = new HashMap<>();
+        if (etudiantIds.isEmpty()) {
+            return comptes;
+        }
+        for (Object[] ligne : jpaRepository.compterParEtudiant(etudiantIds)) {
+            comptes.put((Long) ligne[0], (Long) ligne[1]);
+        }
+        return comptes;
     }
 }

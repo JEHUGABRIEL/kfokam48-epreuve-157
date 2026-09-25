@@ -6,7 +6,10 @@ import com.kfokam48.epreuve.relecture.domain.model.StatutRelecture;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Adaptateur : implémente le port du domaine au-dessus de Spring Data et du mapper. */
@@ -41,5 +44,30 @@ public class RelectureRepositoryAdapter implements RelectureRepository {
         return jpaRepository.findByRelecteurIdAndStatut(relecteurId, statut).stream()
                 .map(mapper::versModele)
                 .toList();
+    }
+
+    @Override
+    public Map<Long, Double> moyenneParAuteur(Collection<Long> etudiantIds) {
+        Map<Long, Double> moyennes = new HashMap<>();
+        if (etudiantIds.isEmpty()) {
+            return moyennes;
+        }
+        for (Object[] ligne : jpaRepository.moyenneParAuteur(etudiantIds)) {
+            // avg() renvoie un type dépendant du dialecte : on lit un Number, pas un Double supposé.
+            moyennes.put((Long) ligne[0], ((Number) ligne[1]).doubleValue());
+        }
+        return moyennes;
+    }
+
+    @Override
+    public Map<Long, Long> compterEnAttenteParRelecteur(Collection<Long> etudiantIds) {
+        Map<Long, Long> comptes = new HashMap<>();
+        if (etudiantIds.isEmpty()) {
+            return comptes;
+        }
+        for (Object[] ligne : jpaRepository.compterParRelecteurEtStatut(etudiantIds, StatutRelecture.ASSIGNEE)) {
+            comptes.put((Long) ligne[0], (Long) ligne[1]);
+        }
+        return comptes;
     }
 }

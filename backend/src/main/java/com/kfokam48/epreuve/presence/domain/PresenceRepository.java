@@ -2,7 +2,9 @@ package com.kfokam48.epreuve.presence.domain;
 
 import com.kfokam48.epreuve.presence.domain.model.Presence;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -18,4 +20,10 @@ public interface PresenceRepository {
 
     /** RG5 : le tirage au sort du relecteur se fait parmi les présents de la session. */
     List<Presence> trouverParSession(Long sessionId);
+
+    /**
+     * EF9 / RG14 / ENF2 : nombre de présences par étudiant, en une requête groupée — pas une par
+     * étudiant, sinon le tableau ferait 60 allers-retours en base.
+     */
+    Map<Long, Long> compterParEtudiant(Collection<Long> etudiantIds);
 }
