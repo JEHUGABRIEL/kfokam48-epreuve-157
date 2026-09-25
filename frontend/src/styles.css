@@ -1,0 +1,138 @@
+/* Le rendu visuel n'est pas noté : ces styles ne visent que la lisibilité et l'usage sur téléphone
+   (ENF1) — pas de défilement horizontal, zones tactiles larges. */
+
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0 1rem 3rem;
+  line-height: 1.5;
+}
+
+.application {
+  max-width: 60rem;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin-bottom: 0.2rem;
+}
+
+.sous-titre {
+  margin-top: 0;
+  opacity: 0.7;
+}
+
+.onglets {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.onglet {
+  padding: 0.6rem 1rem;
+  border: 1px solid #888;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.onglet.actif {
+  font-weight: 700;
+  border-color: currentColor;
+  background: rgba(127, 127, 127, 0.15);
+}
+
+.carte {
+  border: 1px solid #8884;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.carte.interne {
+  margin-top: 0.8rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+input,
+select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.2rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.boutons,
+.ligne-champs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ligne-champs > label {
+  flex: 1 1 12rem;
+}
+
+.code,
+.note {
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+}
+
+.chargement {
+  opacity: 0.7;
+}
+
+.erreur {
+  color: #b00020;
+  font-weight: 600;
+}
+
+.succes {
+  color: #0a6b2d;
+  font-weight: 600;
+}
+
+.discret {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+  display: block;
+  overflow-x: auto;
+}
+
+th,
+td {
+  border-bottom: 1px solid #8884;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+footer {
+  opacity: 0.75;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+}
