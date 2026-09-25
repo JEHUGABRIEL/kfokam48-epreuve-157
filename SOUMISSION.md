@@ -20,12 +20,13 @@
 | | |
 |---|---|
 | Dépôt (public) | `https://github.com/JEHUGABRIEL/kfokam48-epreuve-157` |
-| Commit final — hash complet, 40 caractères | `fea1a367df335e0c8fc621c6c8f4cd97cc3a9066` |
+| Commit final — hash complet, 40 caractères | `57e4a59f5acd42708fa5e1020f590d8af03a6159` |
 | Branche | `main` |
 
-Ce hash est le commit de merge de la PR `#54`, qui contient l'intégralité du travail : les six modules
-backend, le frontend, l'analyse corrigée et le journal. **La seule modification postérieure à ce hash est
-la mise à jour de ce fichier de soumission** — elle ne peut pas contenir son propre hash.
+Ce hash est le commit de merge de la dernière pull request, et il contient l'intégralité du travail :
+les six modules backend, le frontend, l'analyse corrigée, le journal et cette soumission.
+**La seule modification postérieure à ce hash est la mise à jour de ce fichier lui-même** — un fichier
+ne peut pas contenir le hash du commit qui le porte.
 
 ## Épreuve Git — étape 5
 
@@ -62,18 +63,19 @@ l'`enveloppe` de l'étape 3. C'est écrit dans `docs/JOURNAL.md` plutôt que pas
 
 Plus l'assignation automatique du relecteur par tirage au sort parmi les présents, jamais l'auteur
 (EF5, RG2, RG5, RG4) ; la clôture de session qui verrouille toute écriture (EF8, RG13) ; la note reçue
-sans l'identité du relecteur (EF7, RG6) ; le remplacement du lien (EF4, RG10) ; et les listes
-d'identification (Q1). Le tout est vérifié sur PostgreSQL réel, pas seulement en test.
+sans l'identité du relecteur (EF7, RG6) ; le remplacement du lien (EF4, RG10) ; l'ajout manuel d'une
+présence par le formateur, marqué `source = FORMATEUR` (RG11, Q14) ; et les listes d'identification
+(Q1). Le tout est vérifié sur PostgreSQL réel, pas seulement en test : les quinze appels du parcours
+complet rendent exactement les statuts imposés.
 
 **Frontend** : trois écrans (formateur, étudiant, relecteur), une couche d'appels API unique, états de
 chargement et d'erreur gérés, aucun calcul métier dupliqué.
 
 **Ce qui ne fonctionne pas / n'est pas livré, et pourquoi :**
 
-- L'ajout manuel d'une présence par le formateur (RG11, Q14) n'est pas implémenté : c'est le seul ticket
-  *Should* resté ouvert (`#11`). La colonne `source` et l'énumération `ETUDIANT`/`FORMATEUR` existent
-  depuis la première migration, mais l'opération n'existe pas.
 - Aucune authentification (Q1, ENF5) : identification par liste, sans vérification serveur.
+- Aucun test automatisé sur le frontend : les trois écrans ont été vérifiés en les construisant
+  (`npm run build`) et en exerçant l'API au `curl`, pas par des tests d'interface.
 - L'étape 3 (enveloppe) n'a pas eu lieu : le script ne m'a pas été remis, donc le bug signalé et le
   changement de besoin ne sont pas traités, et l'analyse n'a pas eu à être corrigée en conséquence.
 - L'étape 5 (épreuve Git) n'a pas eu lieu : bundle non remis.
@@ -84,7 +86,7 @@ chargement et d'erreur gérés, aucun calcul métier dupliqué.
 ## Avant de téléverser, vérifie
 
 - [x] Le dépôt est **public** et s'ouvre en navigation privée (vérifié : `visibility: PUBLIC`)
-- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`fea1a367df335e0c8fc621c6c8f4cd97cc3a9066`)
+- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`57e4a59f5acd42708fa5e1020f590d8af03a6159`)
 - [x] Tout le travail est **poussé** — `git status` propre, `main` = `origin/main`
 - [x] Le `README` a été suivi à la lettre depuis le dépôt (parcours complet rejoué au `curl`)
 - [x] `JOURNAL.md` et le cahier des charges sont dans `docs/`
