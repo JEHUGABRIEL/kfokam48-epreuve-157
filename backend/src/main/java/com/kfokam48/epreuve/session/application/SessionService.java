@@ -1,8 +1,11 @@
 package com.kfokam48.epreuve.session.application;
 
 import com.kfokam48.epreuve.session.application.dto.OuvrirSessionRequest;
+import com.kfokam48.epreuve.session.application.dto.SessionClotureeResponse;
 import com.kfokam48.epreuve.session.application.dto.SessionOuverteResponse;
 import com.kfokam48.epreuve.session.domain.Session;
+import com.kfokam48.epreuve.session.domain.SessionDejaClotureeException;
+import com.kfokam48.epreuve.session.domain.SessionInconnueException;
 import com.kfokam48.epreuve.session.domain.SessionRepository;
 import com.kfokam48.epreuve.session.domain.StatutSession;
 
@@ -45,6 +48,24 @@ public class SessionService {
                 enregistree.getOuvertureAt(),
                 enregistree.getExpirationAt()
         );
+    }
+
+    // RG13 : la clôture verrouille la session. C'est ici qu'on l'écrit, et c'est aux autres
+    // modules de la consulter avant toute écriture — un seul endroit décide de l'état.
+    @Transactional
+    public SessionClotureeResponse cloturer(Long id) {
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() -> new SessionInconnueException(id));
+
+        if (session.estCloturee()) {
+            throw new SessionDejaClotureeException(id);
+        }
+
+        session.setStatut(StatutSession.CLOTUREE);
+        session.setClotureAt(Instant.now());
+        sessionRepository.save(session);
+
+        return new SessionClotureeResponse(session.getId(), session.getClotureAt());
     }
 
     // Alphabet volontairement sans caractères ambigus (0/O, 1/I) : le code est destiné

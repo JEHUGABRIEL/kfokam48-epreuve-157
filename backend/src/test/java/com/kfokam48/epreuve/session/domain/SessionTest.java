@@ -28,4 +28,15 @@ class SessionTest {
 
         assertThat(session.estExpiree()).isFalse();
     }
+
+    // Vérifie RG13 : la clôture est un état propre, indépendant de l'expiration du code.
+    @Test
+    void une_session_cloturee_est_reconnue_comme_telle() {
+        Session session = new Session();
+        session.setStatut(StatutSession.OUVERTE);
+        assertThat(session.estCloturee()).isFalse();
+
+        session.setStatut(StatutSession.CLOTUREE);
+        assertThat(session.estCloturee()).isTrue();
+    }
 }
