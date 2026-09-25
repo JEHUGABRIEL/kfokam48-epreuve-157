@@ -33,12 +33,34 @@ L'API écoute sur `http://localhost:8080`, le frontend sur `http://localhost:517
 `/api/...` sur sa propre origine : Vite proxifie vers le backend (`vite.config.ts`), donc aucune URL
 d'API n'est écrite en dur et aucun CORS n'est nécessaire.
 
+### Configuration locale : un seul `.env`
+
+Aucun réglage n'est nécessaire pour démarrer. Pour adapter la configuration à votre poste, copiez le
+modèle :
+
+```bash
+cp .env.example .env      # `.env` n'est jamais commité (voir .gitignore)
+```
+
+Ce fichier unique, à la racine, est lu par les trois outils — Spring Boot
+(`spring.config.import`), Vite (`loadEnv`) et Docker Compose (nativement) : un `.env` par outil aurait
+fini par les contredire. Les variables d'environnement gardent la priorité dessus, ce qui laisse la
+ligne de commande utilisable ponctuellement.
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `DB_PORT` | `5433` | port hôte de PostgreSQL dans `compose.yaml` |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | `jdbc:postgresql://localhost:5433/epreuve`, `postgres`, `postgres` | connexion de l'API |
+| `SERVER_PORT` | `8080` | port d'écoute de l'API |
+| `VITE_API_TARGET` | `http://localhost:8080` | cible du proxy Vite, à faire suivre avec `SERVER_PORT` |
+
 > Le port hôte de PostgreSQL est **5433**, pas 5432 : un PostgreSQL local occupe souvent 5432.
-> Pour en changer : `DB_PORT=5432 docker compose up -d`, en surchargeant alors `DB_URL`.
 >
 > Si le port **8080** est déjà pris sur votre machine (c'est fréquent : Keycloak, un autre Tomcat…),
-> l'API échoue au démarrage avec `BindException: Adresse déjà utilisée`. Démarrez-la ailleurs et
-> indiquez la même cible au frontend :
+l'API échoue au démarrage avec `BindException: Adresse déjà utilisée`. L'API est lancée depuis
+`backend/`, où `../.env` désigne la racine du dépôt — il suffit donc d'écrire `SERVER_PORT=8081` et
+`VITE_API_TARGET=http://localhost:8081` dans `.env`. La variable exportée à la main reste possible
+pour un essai ponctuel :
 >
 > ```bash
 > cd backend && SERVER_PORT=8081 ./mvnw spring-boot:run
