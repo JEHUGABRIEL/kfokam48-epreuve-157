@@ -39,10 +39,28 @@ export type RelectureAssignee = {
   statut: string;
 };
 
+/**
+ * Réponse de l'opération **imposée** `POST /api/relectures/{id}` : la note d'un relecteur, entière.
+ * Pas de `provisoire` ici — le contrat imposé ne le prévoit pas, et une note rendue est close (RG12).
+ */
+export type RelectureRendue = {
+  statut: string;
+  note: number | null;
+  commentaire: string | null;
+};
+
+/**
+ * Note **retenue** d'un exercice (`GET /api/relectures/recues`) : la moyenne des deux pairs, ou celle
+ * du seul pair qui a rendu — auquel cas `provisoire` vaut vrai et l'écran doit le dire.
+ *
+ * Distinct de `RelectureRendue` à dessein : deux questions différentes, deux formes différentes. Les
+ * confondre ferait croire au frontend que toute note lue porte un `provisoire`.
+ */
 export type RelectureRecue = {
   statut: string;
   note: number | null;
   commentaire: string | null;
+  provisoire: boolean;
 };
 
 export type LigneTableau = {
@@ -150,7 +168,7 @@ export const api = {
     ),
 
   rendreRelecture: (id: number, note: number, commentaire: string) =>
-    requete<RelectureRecue>(`/relectures/${id}`, {
+    requete<RelectureRendue>(`/relectures/${id}`, {
       method: 'POST',
       body: JSON.stringify({ note, commentaire }),
     }),

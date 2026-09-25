@@ -245,6 +245,24 @@ button {
   font-size: 0.9rem;
 }
 
+/* Note retenue d'un exercice : le provisoire se dit en toutes lettres (voir EcranEtudiant), la
+   couleur ne fait que le reprendre. Classe distincte de `.etiquette` (la puce de la barre latérale,
+   en majuscules) : hériter d'une règle sans rapport aurait imposé ici une casse et des marges qu'on
+   n'a pas choisies. */
+.etat-note {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.etat-note.provisoire {
+  color: #8a5300;
+}
+
+.etat-note.definitive {
+  color: #0a6b2d;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
