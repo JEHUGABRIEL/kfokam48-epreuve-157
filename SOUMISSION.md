@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | Dépôt (public) | `https://github.com/JEHUGABRIEL/kfokam48-epreuve-157` |
-| Commit final — hash complet, 40 caractères | `9691d2f44d1d4ae865021c72cc44a990197dcc63` |
+| Commit final — hash complet, 40 caractères | `950f102ca99638404dc31dd62deec01a7b2f18bd` |
 | Branche | `main` |
 
 Le hash déclaré est celui du commit de merge qui précède immédiatement l'écriture de ces lignes. Il
@@ -103,7 +103,7 @@ qu'une page ; chargements et erreurs gérés au même endroit ; aucun calcul mé
 ## Avant de téléverser, vérifie
 
 - [x] Le dépôt est **public** et s'ouvre en navigation privée (vérifié : `visibility: PUBLIC`)
-- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`9691d2f44d1d4ae865021c72cc44a990197dcc63`, relevé par `git rev-parse` **et** vérifié par appel à l'API du dépôt)
+- [x] Le hash fait bien **40 caractères** et existe sur GitHub (`950f102ca99638404dc31dd62deec01a7b2f18bd`, relevé par `git rev-parse` **et** vérifié par appel à l'API du dépôt)
 - [x] Tout le travail est **poussé** — `git status` propre, `main` = `origin/main`
 - [x] Le `README` a été suivi à la lettre depuis le dépôt (parcours complet rejoué au `curl`)
 - [x] `JOURNAL.md` et le cahier des charges sont dans `docs/`
