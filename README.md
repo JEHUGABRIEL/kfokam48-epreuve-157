@@ -35,6 +35,15 @@ d'API n'est écrite en dur et aucun CORS n'est nécessaire.
 
 > Le port hôte de PostgreSQL est **5433**, pas 5432 : un PostgreSQL local occupe souvent 5432.
 > Pour en changer : `DB_PORT=5432 docker compose up -d`, en surchargeant alors `DB_URL`.
+>
+> Si le port **8080** est déjà pris sur votre machine (c'est fréquent : Keycloak, un autre Tomcat…),
+> l'API échoue au démarrage avec `BindException: Adresse déjà utilisée`. Démarrez-la ailleurs et
+> indiquez la même cible au frontend :
+>
+> ```bash
+> cd backend && SERVER_PORT=8081 ./mvnw spring-boot:run
+> cd frontend && VITE_API_TARGET=http://localhost:8081 npm run dev
+> ```
 
 ### Données de démonstration
 
@@ -65,6 +74,22 @@ cd frontend && npm run build  # vérification de types + build de production
 
 Les tests backend tournent sur H2 avec Flyway désactivé : **`./mvnw test` ne demande ni Docker ni base
 locale**, ce qui permet à un correcteur de valider le projet sur un poste vierge.
+
+### Vérification de bout en bout (PostgreSQL réel)
+
+Le parcours complet a été exécuté sur la vraie base, et non seulement en test — c'est ce qui valide
+`V1`/`V2` contre les entités (`ddl-auto: validate`) et les codes de statut du contrat :
+
+| Étape | Résultat observé |
+|---|---|
+| `POST /api/sessions` | `201 { id, code, ouvertureAt, expirationAt }` |
+| `POST /api/presences` | `201` ; puis `409 DEJA_PRESENT` ; puis `400 CODE_INCONNU` |
+| `POST /api/exercices` | `400 LIEN_INVALIDE`, puis `201 { statut: "EN_ATTENTE_RELECTURE" }` et `409 EXERCICE_DEJA_DEPOSE` |
+| `GET /api/relectures/assignees` | le relecteur tiré au sort est un autre étudiant que l'auteur (RG2, RG5) |
+| `POST /api/relectures/{id}` | `400 NOTE_INVALIDE` pour 25, `200` pour 15, puis `409 RELECTURE_DEJA_RENDUE` (RG3, RG12) |
+| `GET /api/relectures/recues` | `200 { statut: "RENDUE", note: 15, commentaire: … }` — sans le nom du relecteur (RG6) |
+| `GET /api/tableau` | `moyenne: 15.0` pour l'auteur relu, `moyenne: null` pour un étudiant sans note |
+| `POST /api/sessions/{id}/cloture` | `200` ; puis `409 SESSION_DEJA_CLOTUREE` sur toute présence ou dépôt (RG13) |
 
 ---
 

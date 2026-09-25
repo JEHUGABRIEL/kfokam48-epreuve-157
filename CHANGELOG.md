@@ -73,6 +73,16 @@ soumission.
   `SESSION_DEJA_CLOTUREE`, note non entière) et §9 corrigé — la liste des livrables citait encore des
   fichiers `.puml` / `.mmd` antérieurs au renommage en `.md`.
 - `SOUMISSION.md` complété : dépôt, hash du commit final sur `main`, commandes de démarrage.
+- **Parcours complet vérifié sur PostgreSQL réel** (et non seulement en tests H2) : `docker compose up -d`
+  puis `./mvnw spring-boot:run`, Flyway applique `V1` et `V2`, Hibernate valide le schéma, puis les
+  quinze appels du contrat rendent exactement les statuts imposés — dont `409 DEJA_PRESENT`,
+  `400 CODE_INCONNU`, `400 LIEN_INVALIDE`, `400 NOTE_INVALIDE`, `409 RELECTURE_DEJA_RENDUE`,
+  `409 SESSION_DEJA_CLOTUREE` et `404 PROMOTION_INCONNUE`. Le relecteur tiré au sort est bien un autre
+  étudiant que l'auteur, et la moyenne vaut `15.0` pour l'auteur relu contre `null` pour un étudiant
+  sans note.
+- Piège d'environnement documenté dans le README : si le port **8080** est occupé (Keycloak, autre
+  serveur), l'API échoue avec `BindException`. `SERVER_PORT` et `VITE_API_TARGET` permettent de
+  démarrer sans modifier le code.
 
 ## Reste à faire (assumé)
 

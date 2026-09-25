@@ -70,11 +70,11 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même pour **observer** l'échec au l
 
 ## Étape 4 — Version finale
 
-**Fait :**
+**Fait :** jalon `[JALON] v1.0` posé sur `main` (le quatrième et dernier, après `depart`, `analyse` et `v0.1`), `README` réécrit **et suivi à la lettre** : `docker compose up -d`, `./mvnw spring-boot:run`, migration `V1`/`V2` appliquée par Flyway, schéma validé par Hibernate, puis le parcours complet au `curl` — ouvrir une session, marquer deux présences, déposer un exercice, constater le relecteur tiré au sort, refuser une note de 25, rendre 15, la relire, afficher le tableau, clôturer, puis constater le refus après clôture. `CHANGELOG.md` aligné sur l'historique réel, `SOUMISSION.md` complété.
 
-**Bloqué :**
+**Bloqué :** ~30 min au total sur deux pièges d'environnement, dont je sors deux règles. D'abord un démarrage impossible : le port 8080 de cette machine est déjà tenu par un Keycloak lancé, et Spring échouait sur un `BindException: Adresse déjà utilisée` enterré au quatrième `Caused by` — pas un message qu'on lit. J'ai vérifié sur `8081` et documenté la sortie dans le README, avec `VITE_API_TARGET` pour que le frontend suive sans modifier le code. Ensuite mon premier essai de parcours complet a rendu quinze `000` : le backend lancé en arrière-plan appartenait à la commande précédente et avait été tué avec elle. Une vérification de bout en bout ne vaut que si le processus vit pendant qu'on interroge.
 
-**IA :**
+**IA :** Claude a écrit le README, le CHANGELOG, le frontend et une partie du code. Contrôle sur ce qu'il **affirme** plutôt que sur ce qu'il produit : la section « ce qui fonctionne » du README a été confrontée ligne par ligne aux réponses réelles de l'API. C'est ainsi que `PUT /api/exercices/{id}` a été trouvé déclaré mais non implémenté, puis implémenté (`#10`) — et que quatre opérations annoncées sans exister ont été repérées au même endroit.
 
 ---
 
