@@ -1,3 +1,9 @@
+# D2 — Modèle de données
+
+Les entités, leurs attributs et leurs cardinalités. **Doit correspondre aux migrations** : c'est le
+cas de `V1__schema_initial.sql`, table par table et colonne par colonne.
+
+```mermaid
 classDiagram
     class Promotion {
         +Long id
@@ -82,3 +88,13 @@ classDiagram
     Etudiant "1" --> "0..1" Exercice : dépose (par session)
     Exercice "1" --> "1" Relecture : est évalué par
     Etudiant "1" --> "*" Relecture : relit (comme relecteur)
+```
+
+**Notes de lecture**
+
+- Il n'existe **pas d'entité `Relecteur`** : un relecteur est un `Etudiant` référencé par
+  `Relecture.relecteurId` (§2, RG5).
+- L'unicité `(sessionId, etudiantId)` de `Presence` (ENF4) et l'unicité
+  `Relecture.exerciceId` (RG4) sont portées par la base, pas seulement par le service.
+- RG2 (pas d'auto-relecture) ne s'exprime pas par une contrainte entre deux tables : elle reste
+  contrôlée dans `RelectureService`.
