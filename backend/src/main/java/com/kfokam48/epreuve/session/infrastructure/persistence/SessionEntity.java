@@ -1,4 +1,6 @@
-package com.kfokam48.epreuve.session.domain;
+package com.kfokam48.epreuve.session.infrastructure.persistence;
+
+import com.kfokam48.epreuve.session.domain.model.StatutSession;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -7,12 +9,22 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+/**
+ * Entité JPA de la table {@code session} (cf. D2 et {@code V1__schema_initial.sql}).
+ *
+ * <p>Elle porte tout ce que le modèle du domaine refuse de porter : les annotations, les noms de
+ * colonnes en {@code snake_case}, et le fait que le statut soit stocké en texte. Le passage entre les
+ * deux est le travail de {@link SessionMapper} — et de lui seul.
+ *
+ * <p>Les colonnes sont nommées explicitement pour que Hibernate valide son mapping contre le schéma
+ * Flyway ({@code ddl-auto: validate} en dev).
+ */
 @Entity
 @Table(name = "session")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Session {
+public class SessionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,15 +50,5 @@ public class Session {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatutSession statut = StatutSession.OUVERTE;
-
-    // RG1 : le code n'est valable que 15 minutes — la validité se lit sur la session, pas sur le code.
-    public boolean estExpiree() {
-        return Instant.now().isAfter(expirationAt);
-    }
-
-    // RG13 : la clôture est un état, pas une date à comparer aux yeux de chaque appelant.
-    public boolean estCloturee() {
-        return statut == StatutSession.CLOTUREE;
-    }
+    private StatutSession statut;
 }

@@ -61,7 +61,13 @@ du changement, 15 pts de produit, 5 pts de journal. Le rendu visuel n'est pas no
 
 Le module `session/` est le gabarit de référence : `domain/` → `application/` → `infrastructure/`,
 dépendances dans ce sens uniquement, DTO systématiques, aucune entité JPA en JSON, exceptions héritant
-d'`ApiException`. Détail complet dans `knowledge.md`.
+d'`ApiException`.
+
+**Le modèle du domaine et l'entité JPA sont deux classes distinctes.** `domain/model/` ne porte aucune
+annotation ni dépendance de persistance, le dépôt du domaine est un port qui n'étend pas
+`JpaRepository`, et l'entité, le dépôt Spring Data, le mapper et l'adaptateur vivent dans
+`infrastructure/persistence/`. Chaque module à venir suit cette découpe. Détail complet dans
+`knowledge.md`.
 
 ## Pièges de l'environnement
 

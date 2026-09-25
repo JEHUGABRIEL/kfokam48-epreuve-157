@@ -113,8 +113,9 @@ npm run build
 
 ## Architecture cible
 
-- **Backend en clean architecture par module** (pas de sur-découpage port/in-port/out), code
-  transverse dans `common/`. Découpage contrôleur / service / repository obligatoire.
+- **Backend en clean architecture par module**, code transverse dans `common/`. Un modèle de domaine
+  pur, un port de persistance, puis en infrastructure l'adaptateur, l'entité JPA et le mapper. Pas de
+  sur-découpage pour autant : pas d'interface par cas d'usage, pas de port/in-port/out.
 - **Front** : couche d'appel API dédiée, écrans formateur / étudiant / relecteur.
 - **Modèle de données** (cf. D2) : `Promotion`, `Etudiant`, `Session`, `Presence`, `Exercice`,
   `Relecture`. Il n'existe **pas** d'entité `Relecteur` : c'est un `Etudiant` référencé par
@@ -124,15 +125,23 @@ npm run build
 
 `session/` est le seul module implémenté et sert de gabarit à répliquer.
 
-- **`domain/`** : entité JPA annotée Lombok (`@Getter`, `@Setter`, `@NoArgsConstructor`), colonnes
-  `snake_case` explicites, `@Enumerated(EnumType.STRING)`, règles métier en méthodes (`estExpiree()`).
-  `*Repository extends JpaRepository<Entité, Long>`, requêtes dérivées (`findByCode`).
+- **`domain/model/`** : le modèle métier, **sans aucune annotation ni dépendance de persistance**
+  (`Session`, `StatutSession`). Lombok pour l'accès aux champs, règles métier en méthodes
+  (`estExpiree()`, `estCloturee()`). Conséquence directe : ces règles se testent sans base, sans
+  contexte Spring et sans mapping.
+- **`domain/`** : le **port** de persistance (`SessionRepository`), exprimé dans le langage du domaine
+  (`enregistrer`, `trouverParId`, `trouverParCode`) et n'étendant **pas** `JpaRepository`. Les
+  exceptions métier y vivent aussi, héritant d'`ApiException`.
 - **`application/`** : `@Service`, injection par constructeur explicite (pas de `@Autowired` sur
   champ), `@Transactional` sur les cas d'usage, constantes métier en `private static final`.
 - **`application/dto/`** : `record` Java 17 ; les requêtes portent les contraintes
   `jakarta.validation` (`@NotBlank`, `@NotNull`).
 - **`infrastructure/`** : `@RestController` + `@RequestMapping`, retourne
   `ResponseEntity<Dto>` — jamais une entité (B3).
+- **`infrastructure/persistence/`** : l'entité JPA (`SessionEntity`, colonnes `snake_case` explicites,
+  `@Enumerated(EnumType.STRING)`), le dépôt Spring Data (`SessionJpaRepository`), le mapper
+  (`SessionMapper`, écrit champ par champ — un oubli se voit) et l'adaptateur
+  (`SessionRepositoryAdapter`) qui implémente le port. Seul l'adaptateur connaît Spring Data.
 - **Exceptions** : `extends ApiException` et appel `super(code, HttpStatus.X, "message français")`.
   `ApiException` est dans `common/error/` et porte `code` + `statut`.
 

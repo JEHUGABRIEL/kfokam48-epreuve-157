@@ -3,11 +3,11 @@ package com.kfokam48.epreuve.session.application;
 import com.kfokam48.epreuve.session.application.dto.OuvrirSessionRequest;
 import com.kfokam48.epreuve.session.application.dto.SessionClotureeResponse;
 import com.kfokam48.epreuve.session.application.dto.SessionOuverteResponse;
-import com.kfokam48.epreuve.session.domain.Session;
 import com.kfokam48.epreuve.session.domain.SessionDejaClotureeException;
 import com.kfokam48.epreuve.session.domain.SessionInconnueException;
 import com.kfokam48.epreuve.session.domain.SessionRepository;
-import com.kfokam48.epreuve.session.domain.StatutSession;
+import com.kfokam48.epreuve.session.domain.model.Session;
+import com.kfokam48.epreuve.session.domain.model.StatutSession;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +40,7 @@ public class SessionService {
         session.setExpirationAt(maintenant.plus(DUREE_VALIDITE_CODE));
         session.setStatut(StatutSession.OUVERTE);
 
-        Session enregistree = sessionRepository.save(session);
+        Session enregistree = sessionRepository.enregistrer(session);
 
         return new SessionOuverteResponse(
                 enregistree.getId(),
@@ -54,7 +54,7 @@ public class SessionService {
     // modules de la consulter avant toute écriture — un seul endroit décide de l'état.
     @Transactional
     public SessionClotureeResponse cloturer(Long id) {
-        Session session = sessionRepository.findById(id)
+        Session session = sessionRepository.trouverParId(id)
                 .orElseThrow(() -> new SessionInconnueException(id));
 
         if (session.estCloturee()) {
@@ -63,7 +63,7 @@ public class SessionService {
 
         session.setStatut(StatutSession.CLOTUREE);
         session.setClotureAt(Instant.now());
-        sessionRepository.save(session);
+        sessionRepository.enregistrer(session);
 
         return new SessionClotureeResponse(session.getId(), session.getClotureAt());
     }
