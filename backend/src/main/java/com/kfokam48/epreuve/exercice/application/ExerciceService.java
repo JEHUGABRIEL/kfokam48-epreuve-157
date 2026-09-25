@@ -7,6 +7,7 @@ import com.kfokam48.epreuve.exercice.application.dto.ExerciceDeposeResponse;
 import com.kfokam48.epreuve.exercice.domain.ExerciceDejaDeposeException;
 import com.kfokam48.epreuve.exercice.domain.ExerciceRepository;
 import com.kfokam48.epreuve.exercice.domain.model.Exercice;
+import com.kfokam48.epreuve.relecture.application.RelectureService;
 import com.kfokam48.epreuve.session.domain.SessionDejaClotureeException;
 import com.kfokam48.epreuve.session.domain.SessionInconnueException;
 import com.kfokam48.epreuve.session.domain.SessionRepository;
@@ -18,10 +19,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
 /**
- * Cas d'usage du module exercice : déposer le lien d'un exercice (EF3, RG9, RG13).
+ * Cas d'usage du module exercice : déposer le lien d'un exercice (EF3, RG9, RG13) et déclencher le
+ * tirage au sort de son relecteur (EF5, RG5).
  *
  * <p>L'ordre des contrôles suit celui du contrat : la session doit exister, ne pas être clôturée,
  * désigner un étudiant réel, et l'étudiant ne doit pas avoir déjà déposé pour cette session.
+ *
+ * <p>Le tirage au sort appartient au module relecture : il est demandé à son cas d'usage
+ * ({@link RelectureService}), jamais à son infrastructure. Un module ne connaît des autres que leur
+ * domaine et leurs cas d'usage — la règle de dépendance reste tenue.
  */
 @Service
 public class ExerciceService {
@@ -29,13 +35,16 @@ public class ExerciceService {
     private final ExerciceRepository exerciceRepository;
     private final SessionRepository sessionRepository;
     private final EtudiantRepository etudiantRepository;
+    private final RelectureService relectureService;
 
     public ExerciceService(ExerciceRepository exerciceRepository,
                            SessionRepository sessionRepository,
-                           EtudiantRepository etudiantRepository) {
+                           EtudiantRepository etudiantRepository,
+                           RelectureService relectureService) {
         this.exerciceRepository = exerciceRepository;
         this.sessionRepository = sessionRepository;
         this.etudiantRepository = etudiantRepository;
+        this.relectureService = relectureService;
     }
 
     // EF3, RG9, RG13 — §7 : la présence n'est pas une condition du dépôt, ni l'heure de fin théorique.
@@ -67,6 +76,17 @@ public class ExerciceService {
         exercice.setDeposeAt(Instant.now());
 
         Exercice enregistre = exerciceRepository.enregistrer(exercice);
+
+        // EF5 / RG5 : le tirage a lieu dans la transaction du dépôt — un exercice enregistré sans son
+        // relecteur serait un exercice que personne ne corrige (RG4). Si aucun présent n'est éligible,
+        // l'exercice reste DEPOSE et le formateur le voit dans son tableau (Q11, §7).
+        boolean relecteurAssigne = relectureService.assigner(
+                enregistre.getId(), enregistre.getSessionId(), enregistre.getEtudiantId()).isPresent();
+        if (relecteurAssigne) {
+            enregistre.marquerEnAttenteDeRelecture();
+            enregistre = exerciceRepository.enregistrer(enregistre);
+        }
+
         return new ExerciceDeposeResponse(enregistre.getId(), enregistre.getStatut());
     }
 }
