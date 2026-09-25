@@ -124,6 +124,41 @@ paths:
         "400": { $ref: "#/components/responses/Erreur" }   # LIEN_INVALIDE
         "409": { $ref: "#/components/responses/Erreur" }   # EXERCICE_DEJA_DEPOSE
 
+  /api/exercices/{id}:
+    put:
+      summary: >
+        L'étudiant remplace le lien de son exercice (EF4, RG10). Accepté tant que le
+        relecteur assigné n'a pas rendu sa relecture, refusé ensuite — 409.
+        Opération ajoutée hors contrat imposé.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lien]
+              properties:
+                lien: { type: string, format: uri }
+      responses:
+        "200":
+          description: Lien remplacé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, statut]
+                properties:
+                  id: { type: integer, format: int64 }
+                  statut: { type: string }
+        "400": { $ref: "#/components/responses/Erreur" }   # LIEN_INVALIDE
+        "404": { $ref: "#/components/responses/Erreur" }   # EXERCICE_INCONNU
+        "409": { $ref: "#/components/responses/Erreur" }   # RELECTURE_DEJA_RENDUE
+
   /api/relectures/{id}:
     post:
       summary: Un relecteur rend sa note et son commentaire
@@ -147,6 +182,67 @@ paths:
         "400": { $ref: "#/components/responses/Erreur" }   # NOTE_INVALIDE
         "403": { $ref: "#/components/responses/Erreur" }   # AUTO_RELECTURE
         "409": { $ref: "#/components/responses/Erreur" }   # RELECTURE_DEJA_RENDUE
+
+  /api/relectures/assignees:
+    get:
+      summary: >
+        Relectures encore assignées à un étudiant (UC7). Ajoutée hors contrat imposé :
+        c'est par cette opération que le relecteur découvre l'identifiant à passer au
+        POST /api/relectures/{id} — sans elle, la relecture serait inatteignable.
+        N'expose ni le lien du déposant ni l'identité de qui que ce soit.
+      parameters:
+        - name: relecteurId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Relectures à rendre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, exerciceId, sessionId, lien, statut]
+                  properties:
+                    id: { type: integer, format: int64 }
+                    exerciceId: { type: integer, format: int64 }
+                    sessionId: { type: integer, format: int64 }
+                    lien: { type: string, format: uri }
+                    statut: { type: string }
+
+  /api/relectures/recues:
+    get:
+      summary: >
+        Relecture reçue par un étudiant pour une session donnée (EF7, RG6). Ajoutée hors
+        contrat imposé : le contrat n'offrait aucun moyen de lire une note, seulement d'en
+        écrire une. Expose note et commentaire, jamais l'identité du relecteur.
+      parameters:
+        - name: etudiantId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: sessionId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: >
+            Relecture de l'exercice déposé par cet étudiant pour cette session.
+            Tant que le relecteur n'a pas rendu, statut vaut ASSIGNEE et note et
+            commentaire sont nuls.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [statut]
+                properties:
+                  statut: { type: string }
+                  note: { type: integer, nullable: true }
+                  commentaire: { type: string, nullable: true }
+        "404": { $ref: "#/components/responses/Erreur" }   # RELECTURE_INCONNUE
 
   /api/tableau:
     get:
@@ -174,6 +270,53 @@ paths:
                     exercicesDeposes: { type: integer }
                     moyenne: { type: number, nullable: true }
                     relecturesEnAttente: { type: integer }
+        "404": { $ref: "#/components/responses/Erreur" }   # PROMOTION_INCONNUE
+
+  /api/promotions:
+    get:
+      summary: >
+        Promotions disponibles. Ajoutée hors contrat imposé : POST /api/sessions exige un
+        promotionId et l'écran formateur n'a aucun moyen de le choisir sans cette liste
+        (EF2, F2).
+      responses:
+        "200":
+          description: Promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, nom]
+                  properties:
+                    id: { type: integer, format: int64 }
+                    nom: { type: string }
+
+  /api/etudiants:
+    get:
+      summary: >
+        Étudiants d'une promotion. Ajoutée hors contrat imposé pour répondre à Q1 :
+        l'étudiant s'identifie en se choisissant dans une liste, puis etudiantId est
+        transmis dans les requêtes qui le demandent. Aucune authentification : hors
+        périmètre de cette version (ENF5), choix assumé et non un oubli.
+      parameters:
+        - name: promotionId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Étudiants de la promotion
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, nom]
+                  properties:
+                    id: { type: integer, format: int64 }
+                    nom: { type: string }
         "404": { $ref: "#/components/responses/Erreur" }   # PROMOTION_INCONNUE
 
 components:
