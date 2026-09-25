@@ -64,6 +64,15 @@ label {
   margin-bottom: 0.6rem;
 }
 
+/* Un champ de liste déroulante et son éventuel message d'échec restent groupés. */
+.champ {
+  margin-bottom: 0.6rem;
+}
+
+.champ > label {
+  margin-bottom: 0;
+}
+
 input,
 select {
   display: block;
@@ -77,6 +86,17 @@ select {
 button {
   padding: 0.6rem 1rem;
   font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Bouton « Réessayer » : il agit comme un lien, au fil du texte qui explique l'échec. */
+.lien {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
   cursor: pointer;
 }
 

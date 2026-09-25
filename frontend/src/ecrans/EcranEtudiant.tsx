@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import { api, ErreurApi, type Etudiant, type Promotion, type RelectureRecue } from '../api/client';
+import { useState } from 'react';
+import { api, ErreurApi, type RelectureRecue } from '../api/client';
+import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { useEtudiants, usePromotions } from '../ui/useListes';
 
 /**
  * Écran étudiant — EF1 (marquer sa présence avec le code), EF3 (déposer un exercice), EF7 (consulter
@@ -11,9 +13,11 @@ import { Chargement, Erreur, Succes } from '../ui/Messages';
  * laisser un identifiant traîner sur un téléphone partagé.
  */
 export function EcranEtudiant() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const promotions = usePromotions();
   const [promotionId, setPromotionId] = useState<number | null>(null);
-  const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
+  const etudiants = useEtudiants(promotionId);
+  // Aucun nom n'est pré-sélectionné : le premier étudiant de la liste n'est pas forcément l'utilisateur
+  // devant son écran, et un clic sur « Marquer ma présence » engageait quelqu'un d'autre.
   const [etudiantId, setEtudiantId] = useState<number | null>(null);
 
   const [code, setCode] = useState('');
@@ -24,31 +28,6 @@ export function EcranEtudiant() {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .promotions()
-      .then((liste) => {
-        setPromotions(liste);
-        if (liste.length > 0) {
-          setPromotionId(liste[0].id);
-        }
-      })
-      .catch((e: ErreurApi) => setErreur(e.message));
-  }, []);
-
-  useEffect(() => {
-    if (promotionId === null) {
-      return;
-    }
-    api
-      .etudiants(promotionId)
-      .then((liste) => {
-        setEtudiants(liste);
-        setEtudiantId(liste.length > 0 ? liste[0].id : null);
-      })
-      .catch((e: ErreurApi) => setErreur(e.message));
-  }, [promotionId]);
 
   async function executer(action: () => Promise<string>) {
     setChargement(true);
@@ -104,32 +83,20 @@ export function EcranEtudiant() {
 
       <div className="carte">
         <h3>Qui êtes-vous ?</h3>
-        <label>
-          Promotion
-          <select
-            value={promotionId ?? ''}
-            onChange={(evenement) => setPromotionId(Number(evenement.target.value))}
-          >
-            {promotions.map((promotion) => (
-              <option key={promotion.id} value={promotion.id}>
-                {promotion.nom}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Mon nom
-          <select
-            value={etudiantId ?? ''}
-            onChange={(evenement) => setEtudiantId(Number(evenement.target.value))}
-          >
-            {etudiants.map((etudiant) => (
-              <option key={etudiant.id} value={etudiant.id}>
-                {etudiant.nom}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ListeDeroulante
+          libelle="Promotion"
+          etat={promotions}
+          valeur={promotionId}
+          onChange={setPromotionId}
+          invitation="— Choisir une promotion —"
+        />
+        <ListeDeroulante
+          libelle="Mon nom"
+          etat={etudiants}
+          valeur={etudiantId}
+          onChange={setEtudiantId}
+          invitation="— Choisir mon nom —"
+        />
       </div>
 
       <div className="carte">

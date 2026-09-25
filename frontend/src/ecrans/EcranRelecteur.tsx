@@ -1,12 +1,8 @@
-import { useEffect, useState } from 'react';
-import {
-  api,
-  ErreurApi,
-  type Etudiant,
-  type Promotion,
-  type RelectureAssignee,
-} from '../api/client';
+import { useState } from 'react';
+import { api, ErreurApi, type RelectureAssignee } from '../api/client';
+import { ListeDeroulante } from '../ui/ListeDeroulante';
 import { Chargement, Erreur, Succes } from '../ui/Messages';
+import { useEtudiants, usePromotions } from '../ui/useListes';
 
 /**
  * Écran relecteur — EF6 (rendre une note et un commentaire).
@@ -15,9 +11,9 @@ import { Chargement, Erreur, Succes } from '../ui/Messages';
  * `POST /api/relectures/{id}`. L'auteur de l'exercice n'est jamais affiché (RG6).
  */
 export function EcranRelecteur() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const promotions = usePromotions();
   const [promotionId, setPromotionId] = useState<number | null>(null);
-  const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
+  const etudiants = useEtudiants(promotionId);
   const [relecteurId, setRelecteurId] = useState<number | null>(null);
   const [assignees, setAssignees] = useState<RelectureAssignee[] | null>(null);
   const [notes, setNotes] = useState<Record<number, string>>({});
@@ -25,31 +21,6 @@ export function EcranRelecteur() {
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .promotions()
-      .then((liste) => {
-        setPromotions(liste);
-        if (liste.length > 0) {
-          setPromotionId(liste[0].id);
-        }
-      })
-      .catch((e: ErreurApi) => setErreur(e.message));
-  }, []);
-
-  useEffect(() => {
-    if (promotionId === null) {
-      return;
-    }
-    api
-      .etudiants(promotionId)
-      .then((liste) => {
-        setEtudiants(liste);
-        setRelecteurId(liste.length > 0 ? liste[0].id : null);
-      })
-      .catch((e: ErreurApi) => setErreur(e.message));
-  }, [promotionId]);
 
   async function chargerAssignees() {
     if (relecteurId === null) {
@@ -94,32 +65,20 @@ export function EcranRelecteur() {
 
       <div className="carte">
         <h3>Mes relectures à rendre</h3>
-        <label>
-          Promotion
-          <select
-            value={promotionId ?? ''}
-            onChange={(evenement) => setPromotionId(Number(evenement.target.value))}
-          >
-            {promotions.map((promotion) => (
-              <option key={promotion.id} value={promotion.id}>
-                {promotion.nom}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Mon nom
-          <select
-            value={relecteurId ?? ''}
-            onChange={(evenement) => setRelecteurId(Number(evenement.target.value))}
-          >
-            {etudiants.map((etudiant) => (
-              <option key={etudiant.id} value={etudiant.id}>
-                {etudiant.nom}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ListeDeroulante
+          libelle="Promotion"
+          etat={promotions}
+          valeur={promotionId}
+          onChange={setPromotionId}
+          invitation="— Choisir une promotion —"
+        />
+        <ListeDeroulante
+          libelle="Mon nom"
+          etat={etudiants}
+          valeur={relecteurId}
+          onChange={setRelecteurId}
+          invitation="— Choisir mon nom —"
+        />
         <button type="button" onClick={chargerAssignees} disabled={chargement}>
           Afficher mes relectures
         </button>
