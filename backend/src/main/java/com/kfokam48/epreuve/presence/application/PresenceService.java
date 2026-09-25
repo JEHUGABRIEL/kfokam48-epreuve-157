@@ -17,6 +17,7 @@ import com.kfokam48.epreuve.session.domain.SessionInconnueException;
 import com.kfokam48.epreuve.session.domain.SessionRepository;
 import com.kfokam48.epreuve.session.domain.model.Session;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,7 +91,7 @@ public class PresenceService {
         presence.setHorodatage(Instant.now());
         presence.setSource(SourcePresence.ETUDIANT);
 
-        Presence enregistree = presenceRepository.enregistrer(presence);
+        Presence enregistree = enregistrerSansDoublon(presence);
         compteur.reinitialiser(etudiantId);
 
         return new PresenceResponse(enregistree.getId(), enregistree.getSessionId(),
@@ -133,8 +134,30 @@ public class PresenceService {
         presence.setHorodatage(Instant.now());
         presence.setSource(SourcePresence.FORMATEUR);
 
-        Presence enregistree = presenceRepository.enregistrer(presence);
+        Presence enregistree = enregistrerSansDoublon(presence);
         return new PresenceResponse(enregistree.getId(), enregistree.getSessionId(),
                 enregistree.getEtudiantId(), enregistree.getSource());
+    }
+
+    /**
+     * RG7 / ENF4 — la contrainte d'unicité est portée par la base, et c'est elle qui tranche quand
+     * deux saisies arrivent en même temps : la lecture qui précède ne voit alors rien, et c'est
+     * l'insertion de la seconde qui échoue.
+     *
+     * <p>La base a raison de refuser ; ce qui manquait, c'est la traduction. Sans elle, la contrainte
+     * remonte en erreur de stockage, donc en {@code 500 ERREUR_INTERNE} — un message que ni l'étudiant
+     * ni le formateur ne peuvent comprendre —, là où le contrat impose {@code 409 DEJA_PRESENT}
+     * (issue #78). Le contrôle lu avant l'écriture reste utile : dans le cas courant, il évite la
+     * tentative d'insertion et donne le même code sans dépendre d'une exception.
+     *
+     * <p>La même porte sert aux deux cas d'usage, donc les deux sont couverts par cette seule
+     * traduction — un ajout manuel du formateur peut lui aussi tomber sur une présence déjà écrite.
+     */
+    private Presence enregistrerSansDoublon(Presence presence) {
+        try {
+            return presenceRepository.enregistrer(presence);
+        } catch (DataIntegrityViolationException e) {
+            throw new DejaPresentException();
+        }
     }
 }
