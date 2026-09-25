@@ -237,6 +237,11 @@ Codes attendus : `CODE_INCONNU` (400), `CODE_EXPIRE` (410), `DEJA_PRESENT` (409)
 `EXERCICE_DEJA_DEPOSE` (409), `NOTE_INVALIDE` (400), `AUTO_RELECTURE` (403),
 `RELECTURE_DEJA_RENDUE` (409), `PROMOTION_INCONNUE` (404), `TROP_DE_TENTATIVES` (429).
 
+Deux codes ne viennent d'aucune `Qx` et sont documentés en section 7 du cahier des charges :
+`REQUETE_INVALIDE` (400, toute erreur de forme : champ manquant, JSON illisible, paramètre absent ou
+mal typé) et `ERREUR_INTERNE` (500, filet de sécurité — le détail est journalisé, jamais renvoyé).
+Les deux vivent dans `common/error/GlobalExceptionHandler.java`.
+
 `TROP_DE_TENTATIVES` (429) est le **seul statut ajouté à une opération imposée** : RG8 (Q4,
 5 échecs de code ⇒ 2 min de blocage) n'était observable autrement ni par le client ni par un
 test. Décision tranchée et consignée dans `docs/CAHIER_DES_CHARGES.md` §7, avec le compteur
