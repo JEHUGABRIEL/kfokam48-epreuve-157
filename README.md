@@ -4,19 +4,19 @@ Application de suivi de présence en session de cours. Le formateur ouvre une se
 code de présence ; l'étudiant marque sa présence, dépose le lien de son exercice ; un relecteur est
 assigné automatiquement parmi les présents ; le formateur consulte un tableau récapitulatif.
 
-**Frontend choisi : React (Vite, TypeScript)** — un seul build statique, trois écrans qui partagent
-la même couche d'appels API, et un outillage déjà maîtrisé, donc du temps investi dans le modèle
-métier plutôt que dans la configuration.
-
 Le cœur du sujet n'est pas l'interface mais les règles métier : code qui expire, pas d'auto-relecture,
 note verrouillée une fois rendue, clôture de session irréversible (cf. `docs/CAHIER_DES_CHARGES.md`).
+
+**Frontend choisi : React (Vite, TypeScript)** — un seul build statique, trois écrans qui partagent la
+même couche d'appels API, et un outillage déjà maîtrisé, donc du temps investi dans le modèle métier
+plutôt que dans la configuration.
 
 ---
 
 ## Démarrage
 
-**Prérequis** : Docker, JDK 17 ou plus (testé sur 21), et le wrapper Maven fourni — rien d'autre à
-installer.
+**Prérequis** : Docker, JDK 17 ou plus (testé sur 21), Node 18 ou plus (testé sur 24). Le wrapper Maven
+est fourni, rien d'autre à installer.
 
 ```bash
 # 1. La base de données de développement (PostgreSQL 16, port hôte 5433)
@@ -25,22 +25,29 @@ docker compose up -d
 # 2. L'API — les migrations Flyway s'appliquent au démarrage
 cd backend && ./mvnw spring-boot:run
 
-# 3. Le frontend (Vite)
+# 3. Le frontend, dans un second terminal
 cd frontend && npm install && npm run dev
 ```
 
-L'API écoute sur `http://localhost:8080`, le frontend sur `http://localhost:5173`.
+L'API écoute sur `http://localhost:8080`, le frontend sur `http://localhost:5173`. Le frontend appelle
+`/api/...` sur sa propre origine : Vite proxifie vers le backend (`vite.config.ts`), donc aucune URL
+d'API n'est écrite en dur et aucun CORS n'est nécessaire.
 
 > Le port hôte de PostgreSQL est **5433**, pas 5432 : un PostgreSQL local occupe souvent 5432.
 > Pour en changer : `DB_PORT=5432 docker compose up -d`, en surchargeant alors `DB_URL`.
 
 ### Données de démonstration
 
-Elles sont chargées automatiquement par la migration `V2__donnees_de_demonstration.sql` : une
-promotion (identifiant **1**), 60 étudiants, et une session ouverte dont le code est `DEMO24`
-(valable 15 minutes à partir du dernier démarrage des migrations).
+Chargées automatiquement par la migration `V2__donnees_de_demonstration.sql` : une promotion
+(identifiant **1**), 60 étudiants (ENF2), et une session ouverte dont le code est `DEMO24`.
 
-Pour vérifier sans rien installer d'autre :
+Le parcours complet se fait donc sans rien créer à la main :
+
+1. **Étudiant** — choisir un nom dans la liste, saisir un code de session pour marquer sa présence.
+2. **Formateur** — ouvrir une session (le code s'affiche), puis consulter le tableau de la promotion.
+3. **Relecteur** — choisir un nom, afficher ses relectures assignées, rendre une note de 0 à 20.
+
+Pour vérifier l'API sans interface :
 
 ```bash
 curl -X POST http://localhost:8080/api/sessions \
@@ -52,42 +59,53 @@ curl -X POST http://localhost:8080/api/sessions \
 ### Vérifier l'installation
 
 ```bash
-cd backend && ./mvnw test
+cd backend && ./mvnw test     # 37 tests, sans Docker ni PostgreSQL (H2 en mémoire)
+cd frontend && npm run build  # vérification de types + build de production
 ```
 
-Les tests tournent sur H2 en mémoire, avec Flyway désactivé : **`./mvnw test` ne demande ni Docker
-ni PostgreSQL**. C'est ce qui permet à un correcteur de valider le projet sur un poste vierge.
+Les tests backend tournent sur H2 avec Flyway désactivé : **`./mvnw test` ne demande ni Docker ni base
+locale**, ce qui permet à un correcteur de valider le projet sur un poste vierge.
 
 ---
 
-## Ce qui fonctionne, ce qui ne fonctionne pas
+## Ce qui fonctionne
 
-**Fonctionne** — l'API, avec ses règles métier et ses codes d'erreur :
+L'API impose cinq opérations (`api/contrat.yaml`) ; les cinq sont implémentées et respectent les
+chemins, verbes, codes de statut et le format d'erreur `{ code, message }`.
 
-| Opération | Rôle |
+| Opération | Rôle | Règles |
+|---|---|---|
+| `POST /api/sessions` | ouvrir une session, obtenir un code | EF2, RG1 |
+| `POST /api/presences` | marquer sa présence avec le code | EF1, RG1, RG7, RG8 |
+| `POST /api/exercices` | déposer le lien de son exercice | EF3, RG9, RG13 |
+| `POST /api/relectures/{id}` | rendre note et commentaire | EF6, RG3, RG12 |
+| `GET /api/tableau?promotionId=` | tableau récapitulatif du formateur | EF9, RG14, ENF2 |
+
+Opérations ajoutées, documentées dans le contrat et en §7 du cahier des charges :
+
+| Opération | Pourquoi elle est nécessaire |
 |---|---|
-| `POST /api/sessions` | ouvrir une session et obtenir un code (EF2, RG1) |
-| `POST /api/sessions/{id}/cloture` | clôturer une session — hors contrat imposé, cf. §7 (EF8, RG13) |
-| `POST /api/presences` | marquer sa présence (EF1, RG7, RG8) |
-| `POST /api/exercices` | déposer le lien de son exercice (EF3, RG9) |
-| `PUT /api/exercices/{id}` | remplacer ce lien (EF4, RG10) |
-| `POST /api/relectures/{id}` | rendre note et commentaire (EF6, RG12) |
-| `GET /api/relectures/assignees` · `GET /api/relectures/recues` | ce qu'un relecteur doit rendre, ce qu'un relu a reçu (EF7, RG6) |
-| `GET /api/tableau?promotionId=` | tableau récapitulatif du formateur (EF9, RG14) |
-| `GET /api/promotions` · `GET /api/etudiants?promotionId=` | listes d'identification (Q1) |
+| `POST /api/sessions/{id}/cloture` | sans clôture, RG13 / Q3 / Q10 / Q11 / Q12 / Q15 sont inapplicables — aucune opération ne la prévoyait |
+| `PUT /api/exercices/{id}` | EF4 / RG10 : remplacer le lien tant que la relecture n'est pas rendue |
+| `GET /api/promotions`, `GET /api/etudiants` | le formateur doit choisir une promotion (EF2), l'étudiant s'identifie en se choisissant dans une liste (Q1) |
+| `GET /api/relectures/assignees` | c'est la seule façon pour le relecteur de connaître l'identifiant à passer au `POST` imposé |
+| `GET /api/relectures/recues` | EF7 / RG6 : le contrat permettait d'écrire une note, pas de la lire |
 
-Le contrat complet, y compris les opérations ajoutées et leurs codes d'erreur, est dans
-`api/contrat.yaml` — c'est la référence, pas ce README.
+Le frontend livre les trois écrans (F2) : formateur (ouvrir, clôturer, tableau), étudiant (présence,
+dépôt, note reçue), relecteur (relectures à rendre). Tous les `fetch` sont dans
+`frontend/src/api/client.ts` et aucun calcul métier n'est dupliqué côté front : la moyenne affichée
+vient de `GET /api/tableau` (F3).
 
-**Ne fonctionne pas / n'est pas livré** — annoncé plutôt que découvert par le correcteur :
+**N'est pas livré** — annoncé plutôt que découvert à la correction :
 
-- **Le frontend n'est pas livré** : `frontend/` est vide. Les trois écrans (formateur, étudiant,
-  relecteur) restent à faire (F2, F3). L'API est utilisable au `curl` et documentée dans
-  `api/contrat.yaml`, mais aucune interface ne l'accompagne.
-- `README` et `CHANGELOG` ont été écrits à la fin : ils sont exacts, mais l'historique Git ne les
-  montre pas au fil de l'eau.
-- Les 14 relectures de la campagne de démonstration ne sont pas pré-remplies : la base de
-  démonstration fournit promotion, étudiants et session, pas d'exercices déjà déposés.
+- **L'ajout manuel d'une présence par le formateur (RG11, Q14)** n'est pas implémenté : la colonne
+  `source` et les données de démonstration le prévoient, mais l'opération n'existe pas encore
+  (ticket `#11`).
+- **Aucune authentification** (Q1, ENF5) : l'identification se fait en choisissant un nom dans une
+  liste, et un `etudiantId` transmis par le client n'est pas vérifié côté serveur. Hors périmètre
+  assumé.
+- Pas de notification, pas d'export du tableau, pas de gestion de plusieurs formateurs (cf. §3 du
+  cahier des charges).
 
 ---
 
@@ -95,14 +113,18 @@ Le contrat complet, y compris les opérations ajoutées et leurs codes d'erreur,
 
 | Test | Ce qu'il prouve |
 |---|---|
-| `SessionTest` | RG1 et RG13 : la fenêtre de validité et l'état de clôture, **sans base ni contexte Spring** |
-| `SessionMapperTest` | l'aller-retour modèle ↔ entité ne perd aucun champ |
-| `SessionRepositoryAdapterTest` | la persistance tient à travers le **port**, pas à travers l'implémentation |
-| `SessionControllerTest` | le endpoint imposé, du HTTP jusqu'à la base, y compris le format d'erreur |
+| `SessionTest` | RG1 et RG13 : fenêtre de validité et état de clôture, **sans base ni contexte Spring** |
+| `ExerciceTest` | la validité du lien d'exercice (400 `LIEN_INVALIDE`) |
+| `RelectureTest` | RG3 (note entière de 0 à 20) et RG12 (une relecture rendue ne se modifie plus) |
+| `RelectureServiceTest` | RG2 et RG5 : l'auteur n'est jamais candidat, le relecteur est tiré parmi les présents |
+| `RelectureResponseTest` | RG6 : le DTO de sortie ne peut pas transporter l'identité du relecteur |
+| `TableauServiceTest` | EF9 / ENF2 : quatre requêtes agrégées, moyenne absente plutôt que nulle |
+| `SessionControllerTest` | l'endpoint imposé, du HTTP jusqu'à la base, format d'erreur compris |
 | `GlobalExceptionHandlerTest` | B4 : `{ code, message }` pour toute erreur, sans fuite technique (ENF3) |
+| `SessionMapperTest`, `SessionRepositoryAdapterTest` | l'aller-retour modèle ↔ entité ne perd aucun champ, et la persistance tient à travers le port |
 
-Le format unitaire / intégration demandé par B6 est respecté : les règles métier se testent seules,
-et un test part du contrôleur pour aller jusqu'à la base.
+B6 est couvert au-delà du minimum : les règles métier se testent **sans contexte Spring**, et un test
+part du contrôleur pour aller jusqu'à la base.
 
 ---
 
@@ -115,21 +137,26 @@ backend/src/main/java/com/kfokam48/epreuve/
 ├── session/               ouvrir / clôturer une session
 ├── presence/              marquer sa présence
 ├── exercice/              déposer, remplacer le lien
-├── relecture/             assigner (RG5), rendre une note (RG12)
+├── relecture/             assigner (RG5), rendre une note (RG12), la lire
 └── tableau/               lecture agrégée pour le formateur
 ```
 
 Chaque module suit la même découpe, et c'est le gabarit à répliquer :
 
 - `domain/model/` — le modèle métier, **sans aucune annotation de persistance** ; les règles y vivent
-  en méthodes (`estExpiree()`, `estCloturee()`) et se testent sans base ;
+  en méthodes (`estExpiree()`, `rendre(note)`, `verifierLien(lien)`) et se testent sans base ;
 - `domain/` — le **port** de persistance, qui n'étend pas `JpaRepository` ;
 - `application/` — les cas d'usage, avec leurs DTO ;
 - `infrastructure/` — le contrôleur, et `infrastructure/persistence/` avec l'entité JPA, le dépôt
   Spring Data, le mapper et l'adaptateur.
 
-Conséquence directe de ce découpage : **le port ne rend que des modèles**, donc renvoyer une entité
-JPA en JSON (interdit par B3) est impossible par construction, pas seulement déconseillé.
+Deux conséquences directes de ce découpage : **le port ne rend que des modèles**, donc renvoyer une
+entité JPA en JSON (interdit par B3) est impossible par construction ; et les règles métier se testent
+sans base, ce qui explique le nombre de tests unitaires ci-dessus.
+
+Dépendances entre modules : `application/` peut appeler l'`application/` ou le `domain/` d'un autre
+module (`ExerciceService` demande le tirage au sort à `RelectureService`), mais jamais son
+`infrastructure/`.
 
 Le schéma est versionné par Flyway (`V1__schema_initial.sql`, `V2__donnees_de_demonstration.sql`) ;
 `ddl-auto` vaut `validate` hors tests, et `create-drop` dans le profil `test`.
@@ -141,7 +168,9 @@ Le schéma est versionné par Flyway (`V1__schema_initial.sql`, `V2__donnees_de_
 | Fichier | Contenu |
 |---|---|
 | `docs/CAHIER_DES_CHARGES.md` | le besoin, les exigences `EF`/`ENF`, les règles `RG`, et la section 7 des zones d'ombre |
-| `docs/diagrammes/D1` à `D4` | cas d'utilisation, modèle de données, séquence de présence, états-transitions d'un exercice |
+| `docs/diagrammes/D1` à `D4` | cas d'utilisation, modèle de données, séquence de présence, états-transitions d'un exercice (Mermaid) |
 | `docs/JOURNAL.md` | le journal de bord, une entrée par étape |
 | `api/contrat.yaml` | le contrat d'API, les 5 opérations imposées plus les ajouts |
+| `CHANGELOG.md` | ce qui a été livré, étape par étape |
+| `SOUMISSION.md` | le dossier de soumission (candidat, dépôts, hash) |
 | `knowledge.md` | le contexte technique du dépôt : conventions, pièges, état réel |

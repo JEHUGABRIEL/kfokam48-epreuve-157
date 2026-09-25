@@ -19,14 +19,18 @@ d'auto-relecture, note verrouillée une fois rendue, clôture de session irréve
 ```bash
 docker compose up -d                      # racine : PostgreSQL 16 (port hôte 5433)
 cd backend && ./mvnw spring-boot:run      # API sur :8080, migrations Flyway au démarrage
-cd backend && ./mvnw test                 # SessionTest passe, SessionControllerTest échoue (cf. plus bas)
+cd backend && ./mvnw test                 # 37 tests, sans Docker ni PostgreSQL (H2 en mémoire)
 ```
 
-`frontend/` est vide : aucune commande npm n'existe encore.
+```bash
+cd frontend && npm install && npm run dev   # frontend React sur :5173, proxy /api vers :8080
+cd frontend && npm run build                # vérification de types + build de production
+```
 
 ## État actuel du dépôt
 
-Les jalons Git sont : `[JALON] depart` → `[JALON] analyse` (fait) → `v0.1` → `v1.0`.
+Les jalons Git sont : `[JALON] depart` → `[JALON] analyse` → `[JALON] v0.1` → `[JALON] v1.0`.
+**Les quatre sont poussés et dans l'ordre**, `[JALON] analyse` avant le premier commit de code.
 
 **Situation Git au 2026-09-25.** `main` est à jour et saine. Le travail d'outillage et de
 documentation est passé par des branches de ticket : une issue, une branche, une PR, un merge
@@ -61,11 +65,13 @@ travail Git consiste à ouvrir une branche par ticket fonctionnel et à y dépos
 | `creer-issues.sh` | Script `gh` de création des labels et des 14 issues du backlog (9 Must, 3 Should, 2 Could) |
 | `compose.yaml` | PostgreSQL 16 de développement (base `epreuve`, port hôte 5433) |
 | `backend/` | Maven Spring Boot 4.1.1. Packages sous `src/main/java/com/kfokam48/epreuve/` : `common/`, `session/`, `presence/`, `exercice/`, `relecture/`, `tableau/` |
-| `frontend/` | **Vide** — aucun `package.json` pour l'instant |
+| `frontend/` | React 18 + Vite + TypeScript. `src/api/client.ts` est le **seul** module qui appelle l'API (F3) ; `src/ecrans/` porte les trois écrans (formateur, étudiant, relecteur) |
 
-**Seul `session/` est implémenté.** Les autres modules existent sous forme de fichiers-squelettes
-documentés (classes vides + Javadoc décrivant le comportement attendu) : ils ne compilent pas de
-règle métier.
+**Tous les modules sont implémentés** : `common/referentiel/`, `session/`, `presence/`, `exercice/`,
+`relecture/` et `tableau/`, chacun en `domain/` (modèle pur + port) → `application/` (cas d'usage +
+DTO) → `infrastructure/` (contrôleur + persistance). `./mvnw test` passe en entier, contexte Spring
+compris : **37 tests, 0 échec**. Les cinq opérations imposées du contrat sont livrées, plus six
+ajoutées (clôture de session, remplacement du lien, listes d'identification, lectures de relecture).
 
 **Tout le code Java est encore non commité** : `git status` montre `?? backend/src/main/java/` et
 `?? backend/src/test/java/` en bloc — `session/` compris. Ne pas conclure que `session/` est
@@ -102,7 +108,7 @@ Dépendances déclarées : `spring-boot-starter-webmvc`, `-data-jpa`, `-validati
 `-test`, `-webmvc-test` (test).
 
 **Frontend** — React + Vite + TypeScript, trois écrans (formateur, étudiant, relecteur). Rien n'est
-encore installé ; les commandes prévues seront :
+installé par `npm install` ; les commandes sont :
 
 ```bash
 cd frontend
@@ -209,14 +215,14 @@ mapping dessus. En cas de modification d'une migration déjà appliquée, Flyway
 - **Le contexte Spring ne démarre pas.** `PresenceRepository`, `ExerciceRepository` et
   `RelectureRepository` étendent `JpaRepository` sur des classes encore vides et non annotées
   `@Entity`. Le premier bean en échec est `relectureRepository` :
-  `Not a managed type: class ...relecture.domain.Relecture`. Conséquence actuelle : `./mvnw compile`
-  et `SessionTest` passent, `SessionControllerTest` échoue au chargement du contexte (2 erreurs sur
-  4). Cela se résout dès que les modules presence/exercice/relecture sont implémentés (ou en rendant
-  leurs repositories inertes en attendant).
-- `frontend/` est vide alors que F1 à F3 exigent trois écrans.
-- Livrables non écrits : `README.md` (installation testée depuis un clone vierge), `CHANGELOG.md`
-  et `SOUMISSION.md` — aucun des trois n'existe à la racine. `docs/JOURNAL.md` existe et est à
-  compléter au fil des étapes.
+  `Not a managed type: class ...relecture.domain.Relecture`. **Résolu** à l'étape 2 : les quatre
+  modules sont désormais de vraies entités derrière leurs ports, et le contexte démarre.
+- **Reste non livré, et assumé** : l'ajout manuel d'une présence par le formateur (RG11, Q14,
+  ticket `#11`, priorité *Should*) — la colonne `source` et l'énumération `ETUDIANT`/`FORMATEUR`
+  existent depuis `V1`, mais l'opération n'a pas d'endpoint.
+- Livrables écrits : `README.md` (parcours complet pour les trois rôles), `CHANGELOG.md` (aligné sur
+  l'historique Git) et `SOUMISSION.md` (dépôt, hash du commit final, commandes). `docs/JOURNAL.md`
+  couvre les étapes 1 et 2 ; l'étape 3 n'a pas eu lieu, l'enveloppe n'ayant pas été remise.
 - `AGENTS.md` est désormais écrit (il a remplacé le gabarit vide) et fait autorité avec ce fichier.
   `.agents/` ne contient que des types TypeScript de l'outil et est ignoré par Git.
 
