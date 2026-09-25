@@ -1,7 +1,7 @@
 # Cahier des charges — Épreuve finale fullstack KFOKAM48
 
-**Auteur :** Binga Jehu Gabriel· 157
-**Version :** 1 · **Date :** 25.09.2026
+**Auteur :** Binga Jehu Gabriel · 157
+**Version :** 1.1 · **Date :** 25.09.2026
 **Frontend choisi :** React (Vite, TypeScript), pour la cohérence avec l'écosystème du candidat et la rapidité de mise en place d'une SPA sur trois écrans distincts.
 
 ---
@@ -138,13 +138,27 @@ Le relecteur **n'est pas un acteur distinct** : c'est un étudiant assigné dyna
 
 ## 10. Démarche prévue
 
-Je mène les six étapes dans l'ordre imposé. L'analyse (cette étape) se clôture par le commit `[JALON] analyse`, avant tout `spring init`. Pour l'étape 2, je ne code que les tickets Must du backlog, une branche par ticket, PR liée à l'issue, migrations Flyway dès le premier modèle pour ne pas être pris au dépourvu à l'étape 3. À l'ouverture de l'enveloppe, je traite en priorité le bug signalé (issue dédiée, reproduction avant correctif), puis le changement de besoin, en séparant clairement correctif et évolution dans des commits distincts, et je mets à jour le cahier des charges et les diagrammes dans la foulée plutôt qu'à la fin. Si je prends du retard, je sacrifie en priorité les tickets Should/Could et le bonus diagramme états-transitions, jamais la conformité au contrat d'API ni la clôture de session — ce sont les points qui pèsent le plus au barème. Je pousse après chaque ticket terminé, jamais en fin de journée.
+Je mène les six étapes dans l'ordre imposé. L'analyse (cette étape) se clôture par le commit `[JALON] analyse`, avant tout `spring init`. Pour l'étape 2, je ne code que les tickets Must du backlog, une branche par ticket et une PR par branche selon la convention fixée ci-dessous, migrations Flyway dès le premier modèle pour ne pas être pris au dépourvu à l'étape 3. À l'ouverture de l'enveloppe, je traite en priorité le bug signalé (issue dédiée, reproduction avant correctif), puis le changement de besoin, en séparant clairement correctif et évolution dans des commits distincts, et je mets à jour le cahier des charges et les diagrammes dans la foulée plutôt qu'à la fin. Si je prends du retard, je sacrifie en priorité les tickets Should/Could et le bonus diagramme états-transitions, jamais la conformité au contrat d'API ni la clôture de session — ce sont les points qui pèsent le plus au barème. Je pousse après chaque ticket terminé, jamais en fin de journée.
+
+**Convention de branches et de pull requests :**
+
+| Point | Règle |
+|---|---|
+| Nommage | `feat/<n°issue>-<slug-court>` pour une fonctionnalité, `fix/<n°issue>-<slug-court>` pour un correctif. Exemple : `feat/2-marquer-presence` |
+| Origine | Toujours créée depuis `main` à jour — jamais depuis la branche d'un autre ticket |
+| Portée | **Une branche = un ticket.** Une tâche technique isolée (outillage, migration, documentation) est un ticket comme un autre : sa propre branche |
+| Publication | Branche poussée dès le premier commit, puis à chaque commit |
+| PR | Une PR par branche, vers `main`, liée à l'issue par `Closes #<n°>`, qui la ferme au merge |
+| Après merge | Branche supprimée, puis retour sur `main` mis à jour avant d'ouvrir la suivante |
+| `main` | Toujours à jour et saine : jamais plus d'un ticket d'avance sur les branches ouvertes. Aucun `push --force` destructeur dessus |
+
+Les commits `[JALON]` font exception : ils se posent directement sur `main`, vides de code, et sont poussés aussitôt. Les noms `chore/<sujet>` sans numéro d'issue sont proscrits — ils regroupent plusieurs tickets et ne permettent donc pas de lire le découpage dans l'historique.
 
 **Definition of Done — un ticket est terminé quand :**
 - Le code respecte B3 (couches séparées, DTO, pas d'entité exposée)
 - Les critères d'acceptation de l'issue sont vérifiés manuellement ou par test
 - Le contrat d'API est respecté à la lettre pour l'endpoint concerné
-- La PR est liée à l'issue et celle-ci est fermée par le merge
+- Une branche dédiée a été poussée, une PR vers `main` a été ouverte et liée à l'issue, et celle-ci est fermée par le merge
 - `JOURNAL.md` est mis à jour pour l'étape correspondante
 
 ---
@@ -153,6 +167,7 @@ Je mène les six étapes dans l'ordre imposé. L'analyse (cette étape) se clôt
 
 | Version | Quand | Ce qui a changé et pourquoi |
 |---|---|---|
-| 1 | | Version initiale |
+| 1 | 25.09.2026 | Version initiale |
+| 1.1 | 25.09.2026 | Convention de branches et de PR rendue explicite : nommage (`feat/<n°issue>-<slug>`, `fix/<n°issue>-<slug>`), une branche par ticket sans exception, exception des commits `[JALON]` posés sur `main`, `main` tenue à jour. L'analyse ne fixait le principe que par une demi-phrase (« une branche par ticket ») sans nommage ni cycle de vie — insuffisant pour être appliqué sans interprétation. |
 
 *L'étape 3 rendra une partie de ce document faux. Reviens le corriger et note-le ici — un cahier des charges périmé est un cahier des charges mort.*

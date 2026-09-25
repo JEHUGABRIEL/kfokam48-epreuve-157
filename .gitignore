@@ -28,3 +28,6 @@ yarn-error.log*
 
 # OS
 Thumbs.db
+
+# Outillage d'agent (types TypeScript de l'outil, étrangers au projet)
+.agents/
