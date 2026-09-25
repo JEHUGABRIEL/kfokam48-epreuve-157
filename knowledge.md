@@ -34,7 +34,7 @@ commit, puis la branche supprimée.
 
 | Ticket | Branche | PR | Contenu |
 |---|---|---|---|
-| `#17` | `chore/17-convention-git` | `#21` | `AGENTS.md`, convention Git (cahier des charges §10), `creer-issues.sh`, `.gitignore` (`\.agents/`) |
+| `#17` | `chore/17-convention-git` | `#21` | `AGENTS.md`, convention Git (cahier des charges §10), `creer-issues.sh`, `.gitignore` (`.agents/`) |
 | `#19` | `chore/19-journal-etapes-1-2` | `#22` | `docs/JOURNAL.md` (étapes 1 et 2) |
 | `#20` | `chore/20-corrections-analyse-contrat` | `#23` | statut `429` au contrat, section 7 complétée, révisions `1.2` |
 | `#18` | `chore/18-contexte-projet` | *(cette PR)* | ce fichier |
