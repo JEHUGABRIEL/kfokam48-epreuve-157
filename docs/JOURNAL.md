@@ -62,13 +62,88 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 3 — Enveloppe
 
-**Fait :** rien, et ce n'est pas un oubli de ma part : le script `enveloppe` ne m'a jamais été remis. Le jalon `[JALON] v0.1` était pourtant poussé, le dépôt prêt à la recevoir. Le bug signalé et le changement de besoin ne sont donc ni reproduits, ni corrigés, ni arbitrés, et aucune branche `fix/…` ni évolution n'a été ouverte pour eux. Ce que ce manque m'a coûté est plus large qu'un correctif : c'est l'étape qui devait rendre une partie de mon analyse fausse, et cette confrontation n'a pas eu lieu.
+> L'`enveloppe` m'a été remise **tardivement**, alors que le jalon `[JALON] v0.1` était poussé depuis
+> longtemps et que les six modules tournaient. L'entrée ci-dessous est écrite **au moment où j'ai
+> terminé l'étape**, pas avant : les deux sujets qu'elle porte sont traités, dans l'ordre qu'elle fixe.
 
-**Bloqué :** l'étape entière. Un correctif sans énoncé n'est pas un correctif, c'est une invention : sans reproduction, il n'y a pas de « avant », donc rien à vérifier après. Je n'ai pas voulu fabriquer un bug plausible pour cocher la case — c'eût été un faux travail, et le sujet note la démarche avant le produit.
+**Fait :** les deux sujets de l'enveloppe, séparés comme elle l'exige — **deux branches, deux PR**.
 
-**IA :** rien pour cette étape. Je ne lui ai fait ni décrire un bug, ni inventer un changement de besoin : les deux auraient produit un livrable d'apparence complète, exactement ce que le barème sanctionne.
+*Le bug d'abord.* La phrase du client (« deux étudiants côte à côte, ils tapent le code presque en
+même temps, un seul apparaît dans ma liste ; j'ai réessayé, cette fois les deux sont passés ») se
+traduit par une **course entre la lecture et l'écriture** dans `PresenceService.marquer` : la
+vérification « ce n'est pas déjà présent » et l'insertion ne sont pas atomiques. Reproduit par une
+rafale de six envois simultanés du **même** `(code, etudiantId)` contre PostgreSQL : un `201`, cinq
+`500 ERREUR_INTERNE`, et au journal `duplicate key value violates unique constraint
+"uq_presence_session_etudiant"`. La base portait déjà le bon garde-fou (`ENF4`) ; ce qui manquait
+était de **traduire son refus** en `409 DEJA_PRESENT`, le code que le contrat impose, au lieu de le
+laisser remonter en erreur de stockage. Ordre tenu et lisible dans l'historique : issue `#78`
+**avant** le premier commit de correction, puis commit du **test qui échoue** (deux tests), puis
+commit du correctif — branche `fix/78-presence-simultanee`, PR `#80`.
 
-**Ce que j'ai sorti du périmètre pour absorber le changement, et pourquoi :** je n'ai rien sorti, faute d'énoncé. L'ordre de sacrifice était fixé d'avance — les tickets Should/Could et le bonus diagramme d'abord, **jamais** la conformité au contrat d'API ni la clôture de session. Cet ordre n'a pas eu à servir : les tickets Must étaient livrés avant `[JALON] v0.1`. Les Should/Could l'ont tous été aussi, plus tard dans la journée.
+*Le changement ensuite.* « Un seul relecteur ça ne marche pas » **retire** Q6 au lieu de s'y ajouter :
+un exercice est désormais relu par **deux pairs distincts** tirés parmi les présents (jamais l'auteur,
+jamais deux fois le même), et la note retenue est la **moyenne** des deux — celle du seul pair qui a
+rendu si l'autre n'a pas rendu, marquée **provisoire**. L'analyse a été corrigée **d'abord et dans un
+commit qui le dit** (`#81`, PR `#84`) : §2, §3, `EF5`, `EF7`, `RG4`, `RG10`, `RG12`, `RG14`, plus les
+diagrammes devenus faux (`D2` : unicité `(exercice_id, relecteur_id)` et cardinalité `1..2` ; `D4` :
+`RELU` à la **dernière** relecture). Puis la base et le code : migration **`V3` ajoutée, jamais
+modifiée en place** (`uq_relecture_exercice` → `uq_relecture_exercice_relecteur`), le domaine (note
+retenue calculée dans `NoteRetenue`, pas chez ses trois appelants), le contrat (`provisoire`), l'API et
+le frontend (`#82` PR `#85`, `#83` PR `#86`).
+
+**Sacrifice de périmètre, écrit et assumé :** le changement est un Must arrivé tard, donc quelque
+chose sort. Le ticket `#79` (« les `500` ailleurs » — remplacer les erreurs de stockage restantes par
+des codes du contrat) est **sacrifié** : commenté et expliqué sur l'issue, pas simplement oublié. Ce
+qui ne sort **jamais**, dans l'ordre de sacrifice fixé depuis l'étape 1 : la conformité au contrat
+(dont les cinq opérations imposées, intactes après le changement) et la clôture de session.
+
+**Bloqué :** ~1 h 30 au total, sur trois choses distinctes. D'abord la **lecture** du bug : ma première
+reproduction — deux étudiants **différents** en parallèle, ce que la phrase du client suggère — passait
+sans broncher, y compris en rafale. C'est le double envoi du **même** étudiant qui casse, et il a fallu
+comprendre que « côte à côte » n'était pas l'essentiel du symptôme : la course existe entre deux
+requêtes, pas entre deux personnes. Ensuite, le backend : `spring-boot:run` **forke une JVM**, donc mon
+`pkill` sur le motif de la commande Maven n'a tué que le parent et j'ai interrogé un processus périmé
+— cinq minutes à croire que la correction ne marchait pas. Enfin un test : il « passait » pour de
+mauvaises raisons, Mockito conservant une **référence** à la liste mutable passée au tirage, si bien
+que les deux tirages se relisaient identiques après coup. C'est le test qui a fait corriger le code
+(passer une copie au tirage), et non l'inverse.
+
+**IA :** Claude, pour traduire le symptôme en cause, écrire le test qui échoue, la migration et le
+domaine.
+
+1. *Le diagnostic.* Il a d'abord écarté le module `presence/` (« rien de racy ici ») avant de
+désigner la séquence lire-puis-écrire. Je ne l'ai pas cru : je l'ai fait reproduire par une rafale
+   concurrente contre PostgreSQL, et c'est le journal de la base, pas son raisonnement, qui a nommé la
+   contrainte violée.
+2. *Le test et la correction.* Deux tests (le même étudiant deux fois ; l'exercice encore en attente
+tant qu'une note manque), puis la traduction du refus de la base en `409`.
+3. *Les deux relecteurs.* Le tirage du second, la note retenue, `provisoire`. Il a produit une première
+   version qui confrontait l'exercice à `RELU` dès la **première** note rendue — refusée : `D4` révisé
+   dit dernière relecture, et la note doit être disponible avant.
+
+**Comment j'ai vérifié.** Le sujet dit que le jury ne cherche pas la correction mais la **preuve** :
+
+- **Le bug.** Reproduction réelle avant correction (`201` × 1, `500` × 5, contrainte violée au
+  journal), puis après (`201` × 1, `409` × 5, une seule ligne en base, aucune erreur interne). Un test
+  qui échoue d'abord, deux tests au vert ensuite — et 49 tests dans le projet.
+- **La migration.** Appliquée sur la base **déjà remplie** de ce poste, pas sur une base neuve : Flyway
+  passe en v3, la relecture existante (`RENDUE`, note 15) est intacte, et la contrainte est bien
+  devenue `(exercice_id, relecteur_id)`. Une migration qu'on n'essaie que sur du vide ne prouve rien.
+- **Le changement, de bout en bout.** Session à quatre présents, dépôt de l'étudiant 1 : deux
+  relectures assignées (relecteurs 2 et 3, l'auteur exclu). Première note `12` → note retenue `12.0`,
+  `provisoire: true` ; seconde note `17` → **`14.5`**, `provisoire: false`, exercice `RELU` ; re-rendu →
+  `409 RELECTURE_DEJA_RENDUE`. Et le cas du seul pair disponible : une seule relecture, `14.0`,
+  **provisoire pour toujours** — décision écrite en §7 plutôt que subie.
+- **Sur mes quatre arbitrages** (moyenne à deux décimales, un seul pair assigné, marque `provisoire`,
+  sacrifice `#79`), je ne me suis pas contenté d'une réponse du modèle : ce sont des trous que les 16
+  `Qx` de `CLIENT.md` ne couvrent pas. Une hypothèse silencieuse étant une faute, les quatre sont
+  écrites en §7 du cahier des charges **avant** le code, et rappelées dans les PR.
+- **Le parcours à l'écran**, enfin, piloté dans Chrome sans interface : la note s'affiche « 14/20 note
+  provisoire — en attente du second relecteur » puis « 14.5/20 note définitive — moyenne des deux
+  relecteurs », et rien n'est écrit dans le stockage du navigateur (Q1, ENF5).
+
+**Après l'enveloppe :** la configuration locale est passée par un `.env` unique (ticket `#87`, PR
+`#88`) — variables listées dans un `.env.example` commité, jamais de secret dans l'historique.
 
 ---
 
@@ -95,7 +170,7 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 5 — Épreuve Git
 
-**Fait :** rien : `git-lab.bundle` ne m'a pas été remis, comme l'`enveloppe` de l'étape 3. Le dépôt `kfokam48-gitlab-157` n'a donc jamais été créé, et aucun exercice Git de l'épreuve n'a été exécuté.
+**Fait :** rien : `git-lab.bundle` ne m'a pas été remis — cette fois ce n'est pas un retard, le bundle n'est jamais arrivé, contrairement à l'`enveloppe` de l'étape 3 qui a fini par m'être remise. Le dépôt `kfokam48-gitlab-157` n'a donc jamais été créé, et aucun exercice Git de l'épreuve n'a été exécuté.
 
 **Bloqué :** l'étape entière, et les 17 points qui vont avec — c'est le plus gros poste perdu de la journée. Mes 12 points de discipline Git (une branche par ticket, une PR par branche, `Closes #<n°>`, branche supprimée, `main` remis à jour avant d'ouvrir la suivante) restent dans l'historique de mon propre dépôt, mais ils ne remplacent pas l'épreuve qui les notait sur le dépôt remis.
 
@@ -105,11 +180,11 @@ Enfin, j'ai fait tourner `./mvnw test` moi-même à chaque ticket pour **observe
 
 ## Étape 6 — Soumission
 
-**Fait :** le dossier de soumission est recomposé contre l'état **réel** de `main`, et non contre un état de mémoire : hash relevé par `git rev-parse`, puis vérifié par appel à l'API du dépôt — un hash que GitHub ne connaît pas rend la partie non corrigible, c'est la seule erreur de la journée qui ne se rattrape pas. Le fichier dit aussi ce qui est livré, y compris les quatre tickets de la fin (`#64`, `#66`, `#70`, `#72`), et ce qui ne l'est pas. Les six premières cases de la checklist de téléversement sont vérifiées ; les deux dernières sont les miennes, et le resteront jusqu'à l'envoi : le matricule exact, le centre, et le téléversement.
+**Fait :** le dossier de soumission est recomposé contre l'état **réel** de `main`, et non contre un état de mémoire : hash relevé par `git rev-parse`, puis vérifié par appel à l'API du dépôt — un hash que GitHub ne connaît pas rend la partie non corrigible, c'est la seule erreur de la journée qui ne se rattrape pas. Le fichier dit aussi ce qui est livré — les tickets de la fin (`#64`, `#66`, `#70`, `#72`), puis toute l'étape 3 (`#78`, `#81`–`#83`, `#87`) — et ce qui ne l'est pas. La relecture qui a suivi l'étape 3 a corrigé une affirmation devenue fausse : le dossier déclarait encore que l'enveloppe n'avait pas eu lieu. Restent les deux gestes qui ne sont pas les miens : le centre d'examen, et le téléversement.
 
 **Ce que je referais autrement avec une journée de plus :**
 
 - **Relire les documents après chaque livraison, pas le soir.** Deux relectures ont trouvé la même chose à des heures différentes : le `README` annonçait des opérations `PUT`/`GET` jamais implémentées (fin d'étape 4), et `knowledge.md` décrivait encore un projet d'avant sa première compilation, avec un `localStorage` et une route protégée qui n'ont jamais existé (relecture finale). Une phrase écrite le matin devient fausse sans prévenir, et c'est la seule dette qui ne se voit pas dans `git status`.
-- **Réclamer l'enveloppe et le bundle tôt, et par écrit.** 27 points (10 + 17) ne sont pas partis faute de scripts remis. L'étape 3 devait rendre une partie de mon analyse fausse — c'est la confrontation la plus formatrice de l'exercice, et elle n'a pas eu lieu. C'est la leçon la plus chère de la journée, et elle ne se rattrape pas.
+- **Réclamer les deux scripts tôt, et par écrit.** L'`enveloppe` de l'étape 3 a fini par arriver, **après** l'heure limite de téléversement : j'ai pu traiter le bug et le changement de besoin, mais dans l'ordre inverse de l'épreuve — le code était déjà écrit quand l'analyse a été corrigée. Les 17 points de l'épreuve Git, eux, ne sont pas partis du tout : le bundle n'est jamais arrivé. C'est la leçon la plus chère de la journée.
 - **Appeler l'API comme un tiers, plus tôt.** L'écart le plus grave — des opérations annoncées au contrat et jamais implémentées — ne se voyait ni dans les tests, ni dans le build, ni dans une relecture du code : il ne se voyait qu'en passant les appels du `README` dans l'ordre, comme le ferait un correcteur pressé.
 - **Ne pas réécrire l'historique Git.** Un `--force-with-lease` pour retirer le trailer `Codebuff` a consommé 5 points pour rien : les arbres étaient identiques avant et après, seuls les messages changeaient. Sur `main`, un historique imparfait vaut mieux qu'un historique réécrit.

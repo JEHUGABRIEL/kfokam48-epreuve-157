@@ -19,7 +19,7 @@ d'auto-relecture, note verrouillée une fois rendue, clôture de session irréve
 ```bash
 docker compose up -d                      # racine : PostgreSQL 16 (port hôte 5433)
 cd backend && ./mvnw spring-boot:run      # API sur :8080, migrations Flyway au démarrage
-cd backend && ./mvnw test                 # 47 tests, sans Docker ni PostgreSQL (H2 en mémoire)
+cd backend && ./mvnw test                 # 58 tests, sans Docker ni PostgreSQL (H2 en mémoire)
 ```
 
 ```bash
@@ -70,8 +70,8 @@ celui de la PR du socle Maven, pas une issue — issues et PR partagent la numé
 **Tous les modules sont implémentés** : `common/referentiel/`, `session/`, `presence/`, `exercice/`,
 `relecture/` et `tableau/`, plus le transverse `common/error/` et `common/pagination/`. Chacun en
 `domain/` (modèle pur + port) → `application/` (cas d'usage + DTO) → `infrastructure/` (contrôleur +
-persistance). `./mvnw test` passe en entier, contexte Spring compris : **47 tests, 0 échec**, dans
-13 classes. Les cinq opérations imposées du contrat sont livrées, plus six ajoutées (clôture de
+persistance). `./mvnw test` passe en entier, contexte Spring compris : **58 tests, 0 échec**, dans
+14 classes. Les cinq opérations imposées du contrat sont livrées, plus six ajoutées (clôture de
 session, remplacement du lien, listes d'identification, lectures de relecture, ajout manuel d'une
 présence).
 
@@ -96,7 +96,7 @@ cd backend
 ./mvnw dependency:tree            # vérifier une dépendance transitive
 ```
 
-Rien à signaler : `./mvnw test` passe en entier (47 tests), sur H2 et **sans Docker** — un correcteur
+Rien à signaler : `./mvnw test` passe en entier (58 tests), sur H2 et **sans Docker** — un correcteur
 peut donc valider le projet sur un poste vierge.
 
 Il n'y a **pas encore de linter ni de formateur** configuré côté backend (pas de checkstyle, pas de
@@ -208,20 +208,22 @@ test crée ses données.
   fonctionne donc dès le premier démarrage.
 
 Règles poussées dans la base plutôt que seulement dans les services : `uq_presence_session_etudiant`
-(ENF4), `uq_relecture_exercice` (RG4), `ck_relecture_note` (RG3), `ck_relecture_rendue` (RG12).
-RG2 (pas d'auto-relecture) ne s'exprime pas en SQL : elle reste dans le service.
+(ENF4), `uq_relecture_exercice_relecteur` (RG4 révisée : deux pairs distincts par exercice),
+`ck_relecture_note` (RG3), `ck_relecture_rendue` (RG12). RG2 (pas d'auto-relecture) ne s'exprime pas en
+SQL : elle reste dans le service, comme la lecture-puis-écriture de la présence.
 
-Les deux migrations ont été exécutées contre un PostgreSQL 16.13 réel et Hibernate a validé son
-mapping dessus. En cas de modification d'une migration déjà appliquée, Flyway refusera le checksum :
-`docker compose down -v` puis relance.
+Les trois migrations (`V1`, `V2`, `V3`) ont été exécutées contre un PostgreSQL 16.13 réel, la dernière
+sur une base **déjà remplie**, et Hibernate a validé son mapping dessus. En cas de modification d'une
+migration déjà appliquée, Flyway refusera le checksum : `docker compose down -v` puis relance.
 
 ### Ce qui manque encore, ou n'a jamais eu lieu
 
-- **Les deux étapes à livrable remis** : l'étape 3 (`enveloppe`) et l'étape 5 (`git-lab.bundle`) n'ont
-  pas pu être traitées, aucun des deux scripts ne m'ayant été remis. Conséquence directe : le bug
-  signalé et le changement de besoin ne sont pas traités, l'analyse n'a pas eu à être corrigée en
-  conséquence, et le dépôt `kfokam48-gitlab-157` n'a jamais été créé. C'est écrit dans
-  `docs/JOURNAL.md` (entrées des étapes 3 et 5) plutôt que passé sous silence.
+- **Étape 5 (`git-lab.bundle`)** : l'épreuve Git n'a pas pu être traitée, le bundle ne m'ayant pas été
+  remis. Le dépôt `kfokam48-gitlab-157` n'a jamais été créé. C'est écrit dans `docs/JOURNAL.md`
+  (entrée de l'étape 5) plutôt que passé sous silence.
+- **Étape 3 (`enveloppe`)** : remise **tardivement**, après l'heure limite. Elle a été traitée — bug
+  (`#78`), changement de besoin (`#81`–`#83`), analyse corrigée en conséquence — mais dans l'ordre
+  inverse de l'épreuve, le code existant déjà. Le ticket `#79` est sacrifié, et c'est écrit.
 - **Aucun test automatisé sur le frontend** : les écrans ont été vérifiés en les construisant
   (`npm run build`), en pilotant Chrome sans interface sur le parcours réel, et au `curl` sur l'API.
   C'est une faiblesse reconnue, pas une omission cachée.
@@ -296,8 +298,12 @@ associé (en mémoire applicative, indexé par `etudiantId` seul). Les trois sta
 - **L'identité du relecteur ne doit jamais sortir de l'API** (RG6) : ni `relecteurId`, ni nom, dans
   la réponse à l'étudiant relu.
 - **Blocage anti-brute-force** (RG8) : 5 échecs de code par étudiant ⇒ 2 minutes de blocage.
-- Seuils et bornes : code valable **15 min** (RG1), note entière **0–20** (RG3), un seul relecteur
-  par exercice (RG4).
+- Seuils et bornes : code valable **15 min** (RG1), note entière **0–20** (RG3), **deux relecteurs
+  distincts par exercice** et note retenue = moyenne des deux, provisoire tant qu'un pair n'a pas rendu
+  (RG4, révisée à l'étape 3).
+- **Configuration locale** : un seul `.env` à la racine (modèle `.env.example`, jamais commité le vrai),
+  lu par Spring Boot (`spring.config.import: optional:file:../.env[.properties]`, depuis `backend/`),
+  Vite (`loadEnv`) et Docker Compose. Aucune variable exportée nécessaire.
 - **`SessionControllerTest` déclare `package ...session.application`** alors qu'il teste
   `SessionController` (infrastructure) : le fichier vit donc sous
   `src/test/java/.../session/application/`. À déplacer si tu préfères la symétrie des packages.

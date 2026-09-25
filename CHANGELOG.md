@@ -59,9 +59,45 @@ soumission.
 
 ## [Étape 3] Enveloppe
 
-- **Non ouverte** : le script `enveloppe` n'a pas été remis au candidat pendant l'épreuve
-  (cf. `docs/JOURNAL.md`). Le bug signalé et le changement de besoin ne sont donc pas traités, et
-  l'analyse n'a pas eu à être corrigée en conséquence.
+L'`enveloppe` a été remise **tardivement**, après l'heure limite de téléversement : l'étape a donc été
+faite, mais dans l'ordre inverse de l'épreuve — le code existait déjà quand l'analyse a été corrigée.
+Les deux sujets qu'elle porte sont traités **sur deux branches et deux pull requests distinctes**,
+comme elle l'exige.
+
+**Le bug — deux présences simultanées.** Issue `#78` ouverte **avant** le premier commit de
+correction, test qui échoue commité **avant** le correctif, puis correctif et PR `#80`. Le symptôme du
+client (« deux étudiants côte à côte, un seul apparaît ») est une course entre la vérification « déjà
+présent » et l'insertion, dans `PresenceService.marquer`. Reproduit par six envois simultanés du même
+`(code, etudiantId)` sur PostgreSQL réel : un `201`, cinq `500 ERREUR_INTERNE`, contrainte
+`uq_presence_session_etudiant` violée au journal. La base portait déjà le bon garde-fou (`ENF4`) : ce
+qui manquait était de traduire son refus en `409 DEJA_PRESENT` au lieu de le laisser remonter en
+erreur de stockage. Après correction : un `201`, cinq `409`, une seule ligne en base.
+
+**Le changement de besoin — deux relecteurs.** Enveloppe : « un seul relecteur ça ne marche pas :
+quand il ne rend rien, l'étudiant n'a aucune note. » **Q6 est donc retirée**, pas complétée.
+
+- Analyse corrigée **d'abord**, dans un commit qui dit que c'est une conséquence du changement
+  (`#81`, PR `#84`) : §2, §3, `EF5`, `EF7`, `RG4`, `RG10`, `RG12`, `RG14`, la règle de gestion issue de
+  Q6 tombe, `D2` (unicité `(exercice_id, relecteur_id)`, cardinalité `1..2`) et `D4` (`RELU` à la
+  **dernière** relecture) sont devenus faux et sont corrigés.
+- Sept décisions que les 16 `Qx` de `CLIENT.md` ne couvrent pas passent en **§7** : moyenne exacte à
+  deux décimales (pas d'arrondi à l'entier), assignation des seuls pairs disponibles (une seule
+  relecture s'il n'y en a qu'un, note **provisoire pour toujours**), booléen `provisoire` ajouté sans
+  toucher au `statut`, `RELU` seulement à la dernière note, remplacement du lien fermé dès la
+  première note (RG10), séparation provision/statut, et le sort de `#79`.
+- **Migration `V3` ajoutée, jamais modifiée en place** : `uq_relecture_exercice` (une relecture par
+  exercice) devient `uq_relecture_exercice_relecteur` (une relecture par couple). Aucune ligne
+  supprimée, aucune colonne retirée : appliquée sur une base **déjà remplie**, Flyway passe en v3 et la
+  relecture existante survit.
+- Code : tirage de **deux** pairs distincts parmi les candidats restants (jamais l'auteur), note
+  retenue calculée dans le domaine (`NoteRetenue`), contrat (`provisoire` sur
+  `GET /api/relectures/recues`), frontend (`#82` PR `#85`, `#83` PR `#86`).
+- **Sacrifice de périmètre écrit** : le ticket `#79` (« les `500` ailleurs ») sort du périmètre, avec
+  sa raison commentée sur l'issue. Ce qui ne sort jamais : la conformité au contrat imposé et la
+  clôture de session.
+
+**Configuration locale par un `.env`** (`#87`, PR `#88`) — `.env.example` commité, `.env` local ignoré,
+lu par Spring Boot, Vite et Compose au même endroit.
 
 ## [Étape 4] Version finale — commit `[JALON] v1.0`
 
@@ -118,6 +154,15 @@ Tout ce qui suit est arrivé sur `main` **après** le jalon `[JALON] v1.0`, dans
   la barre latérale liste ensuite les fonctionnalités du rôle, avec un retour au choix du rôle. Le
   catalogue des rôles est une source unique, partagée par l'accueil et la barre latérale, pour que les
   deux ne puissent pas se contredire.
+- **Correctif — deux présences simultanées** (`#78`, PR `#80`) et **deux relecteurs par exercice**
+  (`#81`–`#83`, PR `#84`, `#85`, `#86`) : l'enveloppe de l'étape 3, traitée tardivement. Détail complet
+  dans la section `[Étape 3]` ci-dessus.
+- **Configuration locale par un `.env`** (`#87`, PR `#88`) : un seul fichier à la racine, listé par un
+  `.env.example` commité, lu par Spring Boot, Vite et Docker Compose. Aucun secret dans l'historique —
+  `.env` est ignoré, et le chemin d'import Spring est unique pour ne pas lire celui d'un projet voisin.
+- **Relecture des documents après l'étape 3** (`#89`) : le journal, ce fichier, le `README` et le
+  dossier de soumission déclaraient encore que l'enveloppe n'avait pas eu lieu, comptaient 47 tests, et
+  décrivaient une relecture unique et un schéma à deux migrations.
 - **Remises à jour du dossier** (`#36`, `#51`, `#53`, `#55`, `#58`, `#60`, `#62`, `#68`, `#74`, `#76`) :
   README, cahier des charges, journal de bord, et relevé du hash de soumission. Ces tickets ne
   changent pas l'application, ils la décrivent — et deux d'entre eux (`#51`, `#74`) ont été ouverts
@@ -125,10 +170,9 @@ Tout ce qui suit est arrivé sur `main` **après** le jalon `[JALON] v1.0`, dans
 
 ## Ce qui n'a pas eu lieu, et pourquoi (assumé)
 
-Ces deux points ne peuvent pas être rattrapés : les deux éléments à remettre ne l'ont jamais été.
-
-- **Étape 3 — enveloppe** : le script `enveloppe` n'a pas été remis. Le bug signalé et le changement
-  de besoin ne sont donc pas traités, et l'analyse n'a pas eu à être corrigée après coup — c'est
-  précisément ce que l'étape 3 devait provoquer.
-- **Étape 5 — épreuve Git** : `git-lab.bundle` n'a pas été remis non plus, donc le second dépôt
-  `kfokam48-gitlab-157` n'a pas de contenu à recevoir.
+- **Étape 3 — enveloppe** : remise **tardivement**, après l'heure limite. L'étape a été faite (voir la
+  section `[Étape 3]` ci-dessus) mais hors du temps prévu : le jalonnage « analyse corrigée avant le
+  code » n'a pas pu être respecté, le code existait déjà. Ce qui reste hors périmètre est écrit : le
+  ticket `#79` est sacrifié.
+- **Étape 5 — épreuve Git** : `git-lab.bundle` n'a pas été remis. Le second dépôt
+  `kfokam48-gitlab-157` n'a pas de contenu à recevoir, et 17 points ne sont pas partis.
