@@ -1,0 +1,38 @@
+# Configuration de développement — épreuve finale KFOKAM48.
+#
+# La base est fournie par compose.yaml à la racine du dépôt :
+#   docker compose up -d
+#
+# Les valeurs par défaut fonctionnent avec ce conteneur. Pour viser une autre base,
+# surcharger sans modifier ce fichier :
+#   DB_URL=jdbc:postgresql://localhost:5432/epreuve DB_PASSWORD=secret ./mvnw spring-boot:run
+
+spring:
+  application:
+    name: epreuve
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/epreuve}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    # B5 : le schéma appartient à Flyway, jamais à Hibernate.
+    # Hibernate ne fait que vérifier que les entités collent au schéma migré.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
+
+  error:
+    # ENF3 : aucune fuite technique dans une réponse HTTP.
+    # Les exceptions métier passent par le @RestControllerAdvice, au format { code, message }.
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+    include-binding-errors: never
