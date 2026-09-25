@@ -86,7 +86,15 @@ soumission.
 
 ## Reste à faire (assumé)
 
-- **`#11` — ajout manuel d'une présence par le formateur** (`RG11`, `Q14`, priorité *Should*) : non
-  implémenté. La colonne `source` et l'énumération `ETUDIANT` / `FORMATEUR` existent depuis `V1`.
 - Épreuve Git (étape 5) : `git-lab.bundle` n'a pas été remis au candidat ; le second dépôt
   `kfokam48-gitlab-157` n'a donc pas de contenu à recevoir.
+- Étape 3 (enveloppe) : le script `enveloppe` n'a pas été remis non plus ; le bug signalé et le
+  changement de besoin ne sont donc pas traités.
+
+## Livré en fin de parcours
+
+- **Ajout manuel d'une présence par le formateur** (`RG11`, `Q14`, ticket `#11`) :
+  `POST /api/presences/formateur`, ajouté au contrat **après son gel** et documenté en §7 du cahier
+  des charges. C'est la seule entorse assumée au principe « contrat figé avant la première ligne de
+  code » : le champ `source` (`ETUDIANT` / `FORMATEUR`) existait depuis `V1` sans qu'aucune opération
+  ne le renseigne, et RG11 était la dernière règle de gestion sans code pour l'exprimer.

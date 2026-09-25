@@ -1,5 +1,8 @@
 package com.kfokam48.epreuve.presence.application;
 
+import com.kfokam48.epreuve.common.referentiel.domain.EtudiantInconnuException;
+import com.kfokam48.epreuve.common.referentiel.domain.EtudiantRepository;
+import com.kfokam48.epreuve.presence.application.dto.AjouterPresenceFormateurRequest;
 import com.kfokam48.epreuve.presence.application.dto.MarquerPresenceRequest;
 import com.kfokam48.epreuve.presence.application.dto.PresenceResponse;
 import com.kfokam48.epreuve.presence.domain.CodeExpireException;
@@ -10,6 +13,7 @@ import com.kfokam48.epreuve.presence.domain.TropDeTentativesException;
 import com.kfokam48.epreuve.presence.domain.model.Presence;
 import com.kfokam48.epreuve.presence.domain.model.SourcePresence;
 import com.kfokam48.epreuve.session.domain.SessionDejaClotureeException;
+import com.kfokam48.epreuve.session.domain.SessionInconnueException;
 import com.kfokam48.epreuve.session.domain.SessionRepository;
 import com.kfokam48.epreuve.session.domain.model.Session;
 
@@ -30,13 +34,16 @@ public class PresenceService {
 
     private final PresenceRepository presenceRepository;
     private final SessionRepository sessionRepository;
+    private final EtudiantRepository etudiantRepository;
     private final CompteurDeTentatives compteur;
 
     public PresenceService(PresenceRepository presenceRepository,
                            SessionRepository sessionRepository,
+                           EtudiantRepository etudiantRepository,
                            CompteurDeTentatives compteur) {
         this.presenceRepository = presenceRepository;
         this.sessionRepository = sessionRepository;
+        this.etudiantRepository = etudiantRepository;
         this.compteur = compteur;
     }
 
@@ -86,6 +93,47 @@ public class PresenceService {
         Presence enregistree = presenceRepository.enregistrer(presence);
         compteur.reinitialiser(etudiantId);
 
+        return new PresenceResponse(enregistree.getId(), enregistree.getSessionId(),
+                enregistree.getEtudiantId(), enregistree.getSource());
+    }
+
+    /**
+     * RG11 (Q14) : le formateur ajoute une présence à la main — « ça arrive qu'un étudiant ait un souci
+     * de téléphone ». La présence porte alors {@code source = FORMATEUR}, pour que l'exception se voie
+     * dans le tableau au lieu de se fondre dans la masse.
+     *
+     * <p>Aucun code n'est demandé, et c'est tout l'intérêt : le formateur intervient précisément quand
+     * l'étudiant n'a pas pu saisir le sien. Le compteur de RG8 n'est pas touché non plus — ce n'est pas
+     * une tentative de l'étudiant.
+     *
+     * <p>Les verrous restent ceux du reste du module : la session doit exister, ne pas être clôturée
+     * (RG13 — un ajout après clôture rouvrirait une session fermée par une porte de service), l'étudiant
+     * doit exister, et une présence déjà enregistrée ne se duplique pas (RG7).
+     */
+    @Transactional
+    public PresenceResponse ajouterParFormateur(AjouterPresenceFormateurRequest requete) {
+        Session session = sessionRepository.trouverParId(requete.sessionId())
+                .orElseThrow(() -> new SessionInconnueException(requete.sessionId()));
+
+        if (session.estCloturee()) {
+            throw new SessionDejaClotureeException(session.getId());
+        }
+
+        if (etudiantRepository.trouverParId(requete.etudiantId()).isEmpty()) {
+            throw new EtudiantInconnuException(requete.etudiantId());
+        }
+
+        if (presenceRepository.trouverParSessionEtEtudiant(session.getId(), requete.etudiantId()).isPresent()) {
+            throw new DejaPresentException();
+        }
+
+        Presence presence = new Presence();
+        presence.setSessionId(session.getId());
+        presence.setEtudiantId(requete.etudiantId());
+        presence.setHorodatage(Instant.now());
+        presence.setSource(SourcePresence.FORMATEUR);
+
+        Presence enregistree = presenceRepository.enregistrer(presence);
         return new PresenceResponse(enregistree.getId(), enregistree.getSessionId(),
                 enregistree.getEtudiantId(), enregistree.getSource());
     }
